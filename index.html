@@ -3358,7 +3358,13 @@
                 filtered = filtered.filter(function(t) { return t.completed && !isCompletedBeforeToday(t); });
             } else {
                 // "all" filter: hide tasks completed before today
-                filtered = filtered.filter(function(t) { return !isCompletedBeforeToday(t); });
+                filtered = filtered.filter(function(t) {
+                    var keep = !isCompletedBeforeToday(t);
+                    if (t.completed && keep) {
+                        console.log('[renderList] 显示已完成任务 id=' + t.id + ' name=' + t.name + ' completedAt=' + t.completedAt + ' isBeforeToday=' + isCompletedBeforeToday(t));
+                    }
+                    return keep;
+                });
             }
 
             if (currentCategory !== 'all') {
