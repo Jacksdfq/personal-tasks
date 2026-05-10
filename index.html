@@ -5852,6 +5852,9 @@
                     '<div>Gist 是 GitHub 提供的文本存储服务，每个 Gist 有唯一的 ID。</div>' +
                     '<div>填入 Token 后，点击下方<b>"创建新的云端存储"</b>自动生成。</div>' +
                     '<div>如果你已有一个 Gist，直接填入它的 ID 即可。</div>' +
+                    '<div style="margin-top:4px;"><b>如何查询已有 Gist ID？</b></div>' +
+                    '<div>打开 <a href="https://gist.github.com/" target="_blank" style="color:var(--accent);">gist.github.com</a>，在列表中点击你的 Gist，</div>' +
+                    '<div>网址末尾那段字符串就是 ID：<code style="background:var(--bg-card);padding:1px 5px;border-radius:3px;">gist.github.com/用户名/<b>这段就是ID</b></code></div>' +
                     '<div style="margin-top:6px;color:var(--text-muted);font-size:11px;">⚠️ Token 仅保存在你当前浏览器中，不会上传到任何服务器。在中国大陆使用需开启 VPN。</div>' +
                     '</div>';
             }
@@ -5877,6 +5880,20 @@
                 '<button class="btn btn-ghost" onclick="forcePush()">📤 强制上传</button>' +
                 '</div>' +
                 '<div id="syncStatus"></div>' +
+                '<div style="background:var(--bg-secondary);border-radius:10px;padding:12px;margin:8px 0;font-size:12px;line-height:1.8;color:var(--text-secondary);">' +
+                '<div style="font-weight:600;color:var(--accent);margin-bottom:6px;">🔄 拉取合并工作原理</div>' +
+                '<div>拉取合并 = <b>拉取服务器数据 → 按更新时间比较 → 推送合并结果</b>，共三步：</div>' +
+                '<div style="margin-top:4px;">1. <b>拉取：</b>从服务器获取最新数据</div>' +
+                '<div>2. <b>合并：</b>逐条对比任务的 updatedAt 时间戳，<b>谁的更新时间晚就保留谁的</b></div>' +
+                '<div>3. <b>推送：</b>把合并后的完整数据存回服务器</div>' +
+                '<div style="margin-top:6px;padding:8px;background:var(--bg-card);border-radius:8px;font-size:11px;">' +
+                '<div>📱 <b>手机最新，电脑旧？</b>手机点拉取合并 → 数据上传到服务器 → 电脑再点一次即可。</div>' +
+                '<div>💻 <b>电脑最新，手机旧？</b>手机点拉取合并 → 从服务器拿到电脑的数据。</div>' +
+                '<div>🔀 <b>两边同时改了不同任务？</b>各自保留，最新的任务版本生效，不会丢失。</div>' +
+                '<div>⚠️ <b>两边改了同一个任务？</b>最后修改的生效（updatedAt 时间戳比较）。</div>' +
+                '</div>' +
+                '<div style="margin-top:6px;color:var(--text-muted);font-size:11px;">💡 建议每次操作前先点"拉取合并"获取最新数据，修改后再点一次推送。</div>' +
+                '</div>' +
                 '<div id="syncInfo" style="font-size:11px;color:var(--text-muted);margin-top:6px;">' +
                 (userSettings.lastSyncDate ? '上次同步：' + new Date(userSettings.lastSyncDate).toLocaleString() : '尚未同步') +
                 '</div>';
