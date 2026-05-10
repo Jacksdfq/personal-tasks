@@ -2470,6 +2470,14 @@
                         }
                     }
                 }
+                // Migrate: add updatedAt to items that don't have it
+                var now = new Date().toISOString();
+                var needsSave = false;
+                [tasks, projects, habits, templates].forEach(function(arr) {
+                    for (var i = 0; i < arr.length; i++) {
+                        if (!arr[i].updatedAt) { arr[i].updatedAt = arr[i].createdAt || now; needsSave = true; }
+                    }
+                });
                 // Migrate v2 data
                 if (tasks.length > 0 && !tasks[0].hasOwnProperty('projectId')) {
                     for (var i = 0; i < tasks.length; i++) {
@@ -2494,6 +2502,7 @@
                     }
                 }
                 if (fixed) saveData();
+                if (needsSave) saveData();
             } catch(e) { console.error('Load error:', e); }
         }
 
@@ -2947,6 +2956,7 @@
                             var oldImp = pt.importance, oldUrg = pt.urgency;
                             pt.importance = newImportance;
                             pt.urgency = newUrgency;
+                            pt.updatedAt = new Date().toISOString();
                             undoData = { type: 'move', task: pt, oldVals: { importance: oldImp, urgency: oldUrg }, expires: Date.now() + 5000 };
                             showUndoToast();
                             showToast('success', '「' + pt.name + '」已移动到 重要' + newImportance + '·紧急' + newUrgency);
@@ -3380,6 +3390,7 @@
                 if (t) {
                     t.completed = true;
                     t.completedAt = new Date().toISOString();
+                    t.updatedAt = new Date().toISOString();
                 }
             }
             selectedTasks = {};
@@ -3409,7 +3420,7 @@
             var catId = cat ? cat.id : 'other';
             for (var i = 0; i < ids.length; i++) {
                 var t = tasks.find(function(x) { return x.id === ids[i]; });
-                if (t) t.category = catId;
+                if (t) { t.category = catId; t.updatedAt = new Date().toISOString(); }
             }
             selectedTasks = {};
             saveData();
@@ -3978,6 +3989,7 @@
                     t.reminderMinutes = reminderMinutes;
                     t.projectId = projectId;
                     t.repeat = repeat;
+                    t.updatedAt = new Date().toISOString();
                 }
                 showToast('success', '任务已更新');
             } else {
@@ -4000,6 +4012,7 @@
                     focusSessions: [],
                     lastRepeatedDate: '',
                     createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
                     completedAt: null
                 });
                 showToast('success', '任务已创建');
@@ -4016,6 +4029,7 @@
                 if (tasks[i].id === id) {
                     tasks[i].completed = !tasks[i].completed;
                     tasks[i].completedAt = tasks[i].completed ? new Date().toISOString() : null;
+                    tasks[i].updatedAt = new Date().toISOString();
 
                     // Update subtasks completion
                     if (tasks[i].completed && tasks[i].subtasks) {
@@ -4412,6 +4426,7 @@
                     var oldImp = t.importance, oldUrg = t.urgency;
                     t.importance = newImportance;
                     t.urgency = newUrgency;
+                    t.updatedAt = new Date().toISOString();
                     undoData = { type: 'move', task: t, oldVals: { importance: oldImp, urgency: oldUrg }, expires: Date.now() + 5000 };
                     showUndoToast();
                 }
@@ -4760,6 +4775,7 @@
             } else {
                 h.records[dateStr] = true;
             }
+            h.updatedAt = new Date().toISOString();
             saveData();
             renderHabitGrid(habitId);
         }
@@ -4820,6 +4836,7 @@
                     h.icon = icon;
                     h.color = color;
                     h.frequency = freq;
+                    h.updatedAt = new Date().toISOString();
                 }
             } else {
                 habits.push({
@@ -4829,7 +4846,8 @@
                     color: color,
                     frequency: freq,
                     records: {},
-                    createdAt: new Date().toISOString()
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
                 });
             }
             closeHabitModal();
@@ -5409,7 +5427,8 @@
                 name: name,
                 color: document.getElementById('newProjectColor').value,
                 description: '',
-                createdAt: new Date().toISOString()
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
             });
             inp.value = '';
             saveData();
@@ -5423,6 +5442,7 @@
             var name = prompt('编辑项目名称：', p.name);
             if (name && name.trim()) {
                 p.name = name.trim();
+                p.updatedAt = new Date().toISOString();
                 saveData();
                 renderProjectsManager();
             }
@@ -5517,6 +5537,8 @@
             templates.push({
                 id: 'tmpl_' + Date.now(),
                 name: name.trim(),
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
                 taskSnapshot: {
                     name: t.name,
                     importance: t.importance,
@@ -5538,41 +5560,257 @@
             var container = document.getElementById('syncSettings');
             if (!container) return;
             var html = '<div class="form-group"><label>同步方式</label>' +
-                '<select id="syncProvider" onchange="userSettings.syncProvider=this.value;saveData();" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);">' +
+                '<select id="syncProvider" onchange="onSyncProviderChange(this.value)" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);">' +
                 '<option value="">不启用</option>' +
                 '<option value="gist"' + (userSettings.syncProvider === 'gist' ? ' selected' : '') + '>GitHub Gist</option>' +
                 '</select></div>';
             if (userSettings.syncProvider === 'gist') {
                 html += '<div class="form-group"><label>GitHub Token</label>' +
-                    '<input type="password" id="syncToken" value="' + userSettings.syncToken + '" onchange="userSettings.syncToken=this.value;saveData();" placeholder="输入 GitHub Personal Access Token..." style="width:100%;padding:8px 12px;border:2px solid var(--border);border-radius:10px;background:var(--bg-card);color:var(--text-primary);"></div>' +
+                    '<input type="password" id="syncToken" value="' + userSettings.syncToken + '" onchange="userSettings.syncToken=this.value;saveData();" placeholder="输入 GitHub Personal Access Token（需 gist 权限）..." style="width:100%;padding:8px 12px;border:2px solid var(--border);border-radius:10px;background:var(--bg-card);color:var(--text-primary);"></div>' +
                     '<div class="form-group"><label>Gist ID</label>' +
-                    '<input type="text" id="syncUrl" value="' + userSettings.syncUrl + '" onchange="userSettings.syncUrl=this.value;saveData();" placeholder="输入 Gist ID..." style="width:100%;padding:8px 12px;border:2px solid var(--border);border-radius:10px;background:var(--bg-card);color:var(--text-primary);"></div>';
+                    '<input type="text" id="syncUrl" value="' + userSettings.syncUrl + '" onchange="userSettings.syncUrl=this.value;saveData();" placeholder="输入已有 Gist ID，或点击下方按钮创建..." style="width:100%;padding:8px 12px;border:2px solid var(--border);border-radius:10px;background:var(--bg-card);color:var(--text-primary);"></div>' +
+                    '<button class="btn btn-ghost" onclick="createNewGist()" style="margin-top:4px;font-size:12px;">📝 创建新的云端存储</button>';
+                html += '<div class="form-group"><label>自动同步</label>' +
+                    '<select id="autoSyncMin" onchange="onAutoSyncChange(this.value)" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);">' +
+                    '<option value="0"' + (userSettings.autoSyncMin === 0 ? ' selected' : '') + '>关闭</option>' +
+                    '<option value="5"' + (userSettings.autoSyncMin === 5 ? ' selected' : '') + '>每 5 分钟</option>' +
+                    '<option value="15"' + (userSettings.autoSyncMin === 15 ? ' selected' : '') + '>每 15 分钟</option>' +
+                    '<option value="30"' + (userSettings.autoSyncMin === 30 ? ' selected' : '') + '>每 30 分钟</option>' +
+                    '<option value="60"' + (userSettings.autoSyncMin === 60 ? ' selected' : '') + '>每 1 小时</option>' +
+                    '</select></div>';
             }
-            html += '<button class="btn btn-primary" onclick="syncNow()" style="margin-top:8px;">🔄 手动同步</button>' +
-                '<div id="syncStatus"></div>';
+            html += '<div style="display:flex;gap:8px;margin-top:8px;">' +
+                '<button class="btn btn-primary" onclick="syncNow()">🔄 拉取合并</button>' +
+                '<button class="btn btn-ghost" onclick="forcePush()">📤 强制上传</button>' +
+                '</div>' +
+                '<div id="syncStatus"></div>' +
+                '<div id="syncInfo" style="font-size:11px;color:var(--text-muted);margin-top:6px;">' +
+                (userSettings.lastSyncDate ? '上次同步：' + new Date(userSettings.lastSyncDate).toLocaleString() : '尚未同步') +
+                '</div>';
             container.innerHTML = html;
         }
 
+        function onSyncProviderChange(val) {
+            userSettings.syncProvider = val;
+            if (!val) { userSettings.autoSyncMin = 0; clearAutoSync(); }
+            saveData();
+            renderSyncSettings();
+        }
+
+        function onAutoSyncChange(val) {
+            userSettings.autoSyncMin = parseInt(val) || 0;
+            saveData();
+            if (userSettings.autoSyncMin > 0 && userSettings.syncProvider && userSettings.syncToken && userSettings.syncUrl) {
+                setupAutoSync();
+            } else {
+                clearAutoSync();
+            }
+        }
+
+        var _autoSyncTimer = null;
+        function setupAutoSync() {
+            clearAutoSync();
+            if (userSettings.autoSyncMin > 0) {
+                _autoSyncTimer = setInterval(autoSync, userSettings.autoSyncMin * 60000);
+            }
+        }
+
+        function clearAutoSync() {
+            if (_autoSyncTimer) { clearInterval(_autoSyncTimer); _autoSyncTimer = null; }
+        }
+
+        function autoSync() {
+            if (!userSettings.syncProvider || !userSettings.syncToken || !userSettings.syncUrl) return;
+            pullFromGist(function(remote) {
+                if (remote) {
+                    var changed = mergeRemoteData(remote, true);
+                    if (changed) {
+                        saveData();
+                        renderAll();
+                        renderSyncSettings();
+                        showToast('info', '已自动同步云端数据');
+                    }
+                }
+            });
+        }
+
+        function createNewGist() {
+            if (!userSettings.syncToken) {
+                alert('请先输入 GitHub Personal Access Token');
+                return;
+            }
+            var statusEl = document.getElementById('syncStatus');
+            if (statusEl) statusEl.innerHTML = '<div class="sync-status info">正在创建云端存储...</div>';
+
+            var initData = { tasks: tasks, projects: projects, habits: habits, templates: templates, userSettings: userSettings, lastModified: new Date().toISOString() };
+
+            fetch('https://api.github.com/gists', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'token ' + userSettings.syncToken,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    description: '个人任务管理系统数据',
+                    public: false,
+                    files: { 'personal_tasks.json': { content: JSON.stringify(initData, null, 2) } }
+                })
+            }).then(function(res) {
+                if (res.ok) return res.json();
+                throw new Error('HTTP ' + res.status);
+            }).then(function(gist) {
+                userSettings.syncUrl = gist.id;
+                userSettings.lastSyncDate = new Date().toISOString();
+                saveData();
+                renderSyncSettings();
+                if (statusEl) statusEl.innerHTML = '<div class="sync-status success">✅ 云端存储已创建！Gist ID: ' + gist.id + '</div>';
+                showToast('success', '云端存储创建成功！');
+            }).catch(function(err) {
+                if (statusEl) statusEl.innerHTML = '<div class="sync-status error">创建失败：' + err.message + '</div>';
+            });
+        }
+
+        // Full sync: pull → merge → push
         function syncNow() {
             var statusEl = document.getElementById('syncStatus');
             if (!statusEl) return;
-
             if (!userSettings.syncProvider || !userSettings.syncToken || !userSettings.syncUrl) {
                 statusEl.innerHTML = '<div class="sync-status error">请先配置 GitHub Token 和 Gist ID</div>';
                 return;
             }
+            statusEl.innerHTML = '<div class="sync-status info">正在拉取云端数据...</div>';
 
-            statusEl.innerHTML = '<div class="sync-status info">同步中...</div>';
+            pullFromGist(function(remote) {
+                if (!remote) {
+                    statusEl.innerHTML = '<div class="sync-status error">无法读取云端数据，请检查 Token 和 Gist ID</div>';
+                    return;
+                }
+                statusEl.innerHTML = '<div class="sync-status info">正在合并数据...</div>';
+                var changed = mergeRemoteData(remote, false);
+                saveData();
+                renderAll();
 
-            var data = {
+                statusEl.innerHTML = '<div class="sync-status info">正在上传合并结果...</div>';
+                pushToGist(function(success) {
+                    if (success) {
+                        userSettings.lastSyncDate = new Date().toISOString();
+                        saveData();
+                        renderSyncSettings();
+                        statusEl.innerHTML = '<div class="sync-status success">✅ 同步成功 — ' + new Date().toLocaleTimeString() + '</div>';
+                        if (changed) showToast('success', '已合并云端数据');
+                    } else {
+                        statusEl.innerHTML = '<div class="sync-status error">上传失败，请检查网络和 Token</div>';
+                    }
+                });
+            });
+        }
+
+        // Pull data from Gist
+        function pullFromGist(callback) {
+            fetch('https://api.github.com/gists/' + userSettings.syncUrl, {
+                headers: {
+                    'Authorization': 'token ' + userSettings.syncToken,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            }).then(function(res) {
+                if (!res.ok) { callback(null); return; }
+                return res.json();
+            }).then(function(gist) {
+                if (!gist || !gist.files || !gist.files['personal_tasks.json']) {
+                    callback(null);
+                    return;
+                }
+                try {
+                    var content = gist.files['personal_tasks.json'].content;
+                    if (!content || content.trim() === '') { callback(null); return; }
+                    var data = JSON.parse(content);
+                    callback(data);
+                } catch(e) {
+                    callback(null);
+                }
+            }).catch(function() {
+                callback(null);
+            });
+        }
+
+        // Merge remote data into local. If silent=true, only merge non-conflicting items.
+        // Returns true if any data changed.
+        function mergeRemoteData(remote, silent) {
+            var changed = false;
+            var now = new Date().toISOString();
+            var lastSync = userSettings.lastSyncDate || '';
+
+            // Ensure remote arrays exist
+            var rTasks = remote.tasks || [];
+            var rProjects = remote.projects || [];
+            var rHabits = remote.habits || [];
+            var rTemplates = remote.templates || [];
+
+            // Merge helper: for each remote item, find local by id
+            function mergeArray(localArr, remoteArr, idKey) {
+                // Index local by id
+                var localIndex = {};
+                for (var i = 0; i < localArr.length; i++) {
+                    localIndex[localArr[i][idKey]] = i;
+                }
+                for (var j = 0; j < remoteArr.length; j++) {
+                    var rItem = remoteArr[j];
+                    var rId = rItem[idKey];
+                    var localIdx = localIndex[rId];
+                    if (localIdx === undefined) {
+                        // Remote-only item → add to local
+                        localArr.push(rItem);
+                        changed = true;
+                    } else {
+                        // Both have it → compare updatedAt
+                        var lItem = localArr[localIdx];
+                        var rTime = rItem.updatedAt || '';
+                        var lTime = lItem.updatedAt || '';
+                        if (rTime > lTime) {
+                            // Remote is newer → use remote (but preserve focusSessions)
+                            if (rItem.focusSessions === undefined && lItem.focusSessions) {
+                                rItem.focusSessions = lItem.focusSessions;
+                            }
+                            localArr[localIdx] = rItem;
+                            changed = true;
+                        }
+                        // else: local is newer or same → keep local
+                    }
+                }
+            }
+
+            mergeArray(tasks, rTasks, 'id');
+            mergeArray(projects, rProjects, 'id');
+            mergeArray(habits, rHabits, 'id');
+            mergeArray(templates, rTemplates, 'id');
+
+            // Merge settings: take the union (later values from remote if not set locally)
+            if (remote.userSettings) {
+                var rs = remote.userSettings;
+                // Don't overwrite sync credentials from remote
+                var protectedKeys = ['syncToken', 'syncUrl', 'syncProvider', 'autoSyncMin'];
+                for (var key in rs) {
+                    if (rs.hasOwnProperty(key) && protectedKeys.indexOf(key) === -1) {
+                        if (userSettings[key] === undefined || userSettings[key] === '' || userSettings[key] === 0) {
+                            if (rs[key]) { userSettings[key] = rs[key]; changed = true; }
+                        }
+                    }
+                }
+            }
+
+            return changed;
+        }
+
+        // Push local data to Gist (upload only)
+        function pushToGist(callback) {
+            var payload = {
                 description: '个人任务管理系统数据',
-                public: false,
                 files: {
                     'personal_tasks.json': {
                         content: JSON.stringify({
                             tasks: tasks, projects: projects, habits: habits,
                             templates: templates,
-                            userSettings: userSettings, exportDate: new Date().toISOString()
+                            userSettings: userSettings, lastModified: new Date().toISOString()
                         }, null, 2)
                     }
                 }
@@ -5584,17 +5822,32 @@
                     'Authorization': 'token ' + userSettings.syncToken,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(data)
+                body: JSON.stringify(payload)
             }).then(function(res) {
-                if (res.ok) {
+                callback(res.ok);
+            }).catch(function() {
+                callback(false);
+            });
+        }
+
+        // Force push (no pull, no merge — uploads local directly)
+        function forcePush() {
+            var statusEl = document.getElementById('syncStatus');
+            if (!statusEl) return;
+            if (!userSettings.syncProvider || !userSettings.syncToken || !userSettings.syncUrl) {
+                statusEl.innerHTML = '<div class="sync-status error">请先配置 GitHub Token 和 Gist ID</div>';
+                return;
+            }
+            statusEl.innerHTML = '<div class="sync-status info">正在上传...</div>';
+            pushToGist(function(success) {
+                if (success) {
                     userSettings.lastSyncDate = new Date().toISOString();
                     saveData();
-                    statusEl.innerHTML = '<div class="sync-status success">✅ 同步成功 — ' + new Date().toLocaleTimeString() + '</div>';
+                    renderSyncSettings();
+                    statusEl.innerHTML = '<div class="sync-status success">✅ 上传成功 — ' + new Date().toLocaleTimeString() + '</div>';
                 } else {
-                    statusEl.innerHTML = '<div class="sync-status error">同步失败：HTTP ' + res.status + '</div>';
+                    statusEl.innerHTML = '<div class="sync-status error">上传失败，请检查网络和 Token</div>';
                 }
-            }).catch(function(err) {
-                statusEl.innerHTML = '<div class="sync-status error">同步失败：' + err.message + '</div>';
             });
         }
 
@@ -5665,6 +5918,11 @@
         setInterval(checkOverdue, 60000);
         // Schedule reminders every hour
         setInterval(scheduleReminder, 3600000);
+        // Auto-sync on startup (with delay to not block UI)
+        if (userSettings.syncProvider && userSettings.syncToken && userSettings.syncUrl) {
+            setupAutoSync();
+            setTimeout(function() { autoSync(); }, 3000);
+        }
     </script>
 </body>
 </html>
