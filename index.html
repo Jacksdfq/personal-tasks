@@ -6435,6 +6435,31 @@
             mergeArray(habits, rHabits, 'id');
             mergeArray(templates, rTemplates, 'id');
 
+            // Remove local items that were deleted on the remote side
+            // (exists locally but not in remote, and was synced before)
+            var remoteTime = remote.lastModified || '';
+            function removeDeletedLocally(localArr, remoteArr, idKey) {
+                if (!remoteTime) return;
+                var remoteIds = {};
+                for (var i = 0; i < remoteArr.length; i++) {
+                    remoteIds[remoteArr[i][idKey]] = true;
+                }
+                for (var j = localArr.length - 1; j >= 0; j--) {
+                    var lItem = localArr[j];
+                    if (!remoteIds[lItem[idKey]]) {
+                        var lTime = lItem.updatedAt || '';
+                        if (lTime && lTime < remoteTime) {
+                            localArr.splice(j, 1);
+                            changed = true;
+                        }
+                    }
+                }
+            }
+            removeDeletedLocally(tasks, rTasks, 'id');
+            removeDeletedLocally(projects, rProjects, 'id');
+            removeDeletedLocally(habits, rHabits, 'id');
+            removeDeletedLocally(templates, rTemplates, 'id');
+
             if (remote.userSettings) {
                 var rs = remote.userSettings;
                 var protectedKeys = ['syncToken', 'syncUrl', 'syncProvider', 'autoPullMin', 'autoPushMin'];
