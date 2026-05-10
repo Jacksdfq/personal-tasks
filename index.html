@@ -2738,6 +2738,14 @@
                         if (!arr[i].updatedAt) { arr[i].updatedAt = arr[i].createdAt || now; needsSave = true; }
                     }
                 });
+                // Repair: completed tasks with missing/invalid completedAt → use updatedAt/createdAt
+                for (var i = 0; i < tasks.length; i++) {
+                    var t = tasks[i];
+                    if (t.completed && (!t.completedAt || isNaN(new Date(t.completedAt).getTime()))) {
+                        t.completedAt = t.updatedAt || t.createdAt || now;
+                        needsSave = true;
+                    }
+                }
                 // Migrate v2 data
                 if (tasks.length > 0 && !tasks[0].hasOwnProperty('projectId')) {
                     for (var i = 0; i < tasks.length; i++) {
@@ -2834,10 +2842,13 @@
         }
 
         function isCompletedBeforeToday(t) {
-            if (!t.completed || !t.completedAt) return false;
+            if (!t.completed) return false;
+            if (!t.completedAt) return true;
             var now = new Date();
             var todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            return new Date(t.completedAt) < todayStart;
+            var cd = new Date(t.completedAt);
+            if (isNaN(cd.getTime())) return true;
+            return cd < todayStart;
         }
 
         function calcHabitStreak(records) {
