@@ -2055,72 +2055,86 @@
 
         /* Mobile responsive */
         @media (max-width: 500px) {
-            body { padding: 10px; }
-            .app-header { flex-direction: column; align-items: flex-start; gap: 8px; }
-            .app-header h1 { font-size: 18px; }
-            .header-actions { gap: 4px; }
-            .header-actions .btn { padding: 6px 10px; font-size: 11px; }
-            .header-actions .btn-icon { width: 34px; height: 34px; font-size: 15px; }
+            *, *::before, *::after { box-sizing: border-box; }
 
-            .tab-nav { gap: 2px; padding: 3px; border-radius: 10px; }
-            .tab-btn { padding: 7px 6px; font-size: 11px; min-width: auto; flex: 1 1 auto; gap: 3px; border-radius: 8px; }
+            body { padding: 8px; overflow-x: hidden; }
+            .app-header { flex-direction: column; align-items: stretch; gap: 6px; }
+            .app-header h1 { font-size: 17px; text-align: center; }
+            .header-actions { gap: 4px; flex-wrap: wrap; justify-content: center; }
+            .header-actions .btn { padding: 6px 8px; font-size: 10px; }
+            .header-actions .btn-icon { width: 32px; height: 32px; font-size: 14px; }
 
-            .stats-bar { gap: 6px; }
-            .stat-card { padding: 8px 10px; min-width: 0; flex: 1 1 calc(33% - 4px); }
-            .stat-card .num { font-size: 18px; }
-            .stat-card .label { font-size: 10px; }
+            .tab-nav { gap: 2px; padding: 3px; border-radius: 10px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            .tab-btn { padding: 6px 5px; font-size: 10px; min-width: auto; flex: 0 0 auto; gap: 2px; border-radius: 7px; white-space: nowrap; }
 
-            .main-layout { grid-template-columns: 1fr; gap: 12px; }
+            .stats-bar { gap: 4px; flex-wrap: wrap; }
+            .stat-card { padding: 7px 6px; min-width: 0; flex: 1 1 calc(33% - 3px); text-align: center; }
+            .stat-card .num { font-size: 16px; }
+            .stat-card .label { font-size: 9px; }
 
-            .matrix-wrapper { aspect-ratio: auto; height: 320px; }
-            .task-dot { width: 26px; height: 26px; font-size: 10px; }
-            .quadrant-label { font-size: 9px; padding: 1px 4px; }
+            .main-layout { grid-template-columns: minmax(0, 1fr); gap: 10px; max-width: 100%; }
+            .right-col { max-width: 100%; }
 
-            .right-col { gap: 6px; }
-            .matrix-card, .sidebar-card, .stats-card { padding: 10px; border-radius: 12px; }
-            .section-title { font-size: 12px; margin-bottom: 6px; }
+            .matrix-wrapper { aspect-ratio: auto; height: 300px; max-width: 100%; }
+            .matrix-grid { inset: 14px 16px 26px 30px; }
+            .task-dot { width: 24px; height: 24px; font-size: 9px; }
+            .quadrant-label { font-size: 8px; padding: 1px 3px; }
+            .axis-label { font-size: 10px; }
+
+            .matrix-card, .sidebar-card, .stats-card {
+                padding: 10px; border-radius: 12px; max-width: 100%; overflow: hidden;
+            }
+            .section-title { font-size: 12px; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
             .form-row { grid-template-columns: 1fr; }
-            .completed-card-body { max-height: 250px; }
+            .completed-card-body { max-height: 220px; }
 
             .search-bar { flex-wrap: wrap; gap: 4px; }
-            .search-bar input { flex: 1 1 100%; font-size: 13px; padding: 7px 10px; }
-            .sort-toggle { font-size: 11px; padding: 3px 8px; }
+            .search-bar input { flex: 1 1 100%; font-size: 13px; padding: 7px 10px; box-sizing: border-box; }
+            .sort-toggle { font-size: 10px; padding: 3px 8px; }
 
             #statsTabGrid0, #statsTabGridHeat, #statsTabGrid1, #statsTabGrid2 { grid-template-columns: 1fr !important; }
             .efficiency-grid { grid-template-columns: 1fr 1fr; }
-            .btn { padding: 7px 12px; font-size: 11px; }
+            .btn { padding: 6px 10px; font-size: 11px; }
 
-            .modal-content { width: 95%; max-width: none; margin: 20px auto; padding: 16px; border-radius: 14px; max-height: 90vh; }
-            .modal-body { max-height: 60vh; }
+            .modal-content { width: calc(100% - 16px); max-width: none; margin: 10px auto; padding: 14px; border-radius: 12px; max-height: 95vh; }
+            .modal-body { max-height: 55vh; }
             .form-group label { font-size: 12px; }
-            .form-group input, .form-group select, .form-group textarea { font-size: 14px; padding: 8px 10px; }
+            .form-group input, .form-group select, .form-group textarea { font-size: 14px; padding: 8px; max-width: 100%; box-sizing: border-box; }
 
-            .task-list .task-item { padding: 8px 10px; }
-            .task-list .task-name { font-size: 13px; }
-            .task-list .task-meta { font-size: 10px; }
+            .task-list .task-item { padding: 7px 8px; }
+            .task-list .task-name { font-size: 12px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+            .task-list .task-meta { font-size: 9px; }
 
             .ct-row { flex-wrap: wrap; }
-            .ct-date { font-size: 10px; }
-            .ct-detail { font-size: 11px; }
-            .ct-name { font-size: 12px; }
+            .ct-date { font-size: 9px; }
+            .ct-detail { font-size: 10px; max-width: 100%; }
+            .ct-name { font-size: 11px; }
 
             canvas { max-width: 100% !important; height: auto !important; }
 
-            .collection-popup { width: 95%; max-width: none; left: 2.5%; }
+            .collection-popup { width: calc(100% - 16px); max-width: none; left: 8px; }
+            .collection-popup .popup-item { font-size: 11px; }
 
-            .export-menu { right: 0; left: auto; min-width: 150px; }
-            .export-menu button { font-size: 12px; padding: 8px 12px; }
+            .export-menu { right: 0; left: auto; min-width: 140px; }
+            .export-menu button { font-size: 11px; padding: 7px 10px; }
 
-            #calendarView table { font-size: 10px; }
-            #calendarView th, #calendarView td { padding: 4px 2px; }
+            #calendarView { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            #calendarView table { font-size: 9px; width: 100%; }
+            #calendarView th, #calendarView td { padding: 3px 1px; }
 
-            .habit-grid { gap: 3px; }
-            .habit-day { width: 22px; height: 22px; }
+            .habit-grid { gap: 2px; }
+            .habit-day { width: 20px; height: 20px; }
 
-            .pomodoro-display { font-size: 40px; }
-            .pomodoro-controls .btn { padding: 8px 14px; font-size: 11px; }
+            .pomodoro-display { font-size: 36px; }
+            .pomodoro-controls .btn { padding: 7px 12px; font-size: 10px; }
 
-            .toast { left: 10px; right: 10px; bottom: 10px; font-size: 12px; }
+            .toast { left: 8px; right: 8px; bottom: 8px; font-size: 11px; padding: 10px 14px; }
+
+            .filter-tabs button { font-size: 10px; padding: 4px 8px; }
+            .batch-bar { flex-wrap: wrap; gap: 3px; }
+            .batch-bar .btn { font-size: 9px; padding: 4px 6px; }
+
+            .project-bar-track { min-width: 20px; }
         }
 
         /* ============ FUTURE STYLE: COMPONENTS ============ */
