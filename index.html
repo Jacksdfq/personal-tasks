@@ -5719,12 +5719,12 @@
         }
 
         var priorityDistMode = 'week';
+        var priorityDistFilter = 'all';
 
         function renderPriorityDist() {
             var container = document.getElementById('priorityDist');
             if (!container) return;
 
-            // Determine date range (start of week/month → today)
             var now = new Date();
             var rangeStart, rangeEnd;
             if (priorityDistMode === 'week') {
@@ -5740,17 +5740,21 @@
             rangeStart.setHours(0,0,0,0);
             rangeEnd.setHours(23,59,59,999);
 
-            // Tasks whose active period overlaps with the range
             var inRange = tasks.filter(function(t) {
                 if (!t.createdAt) return false;
                 var taskStart = new Date(t.createdAt);
-                // Task end: completion date, deadline, or today (whichever is latest)
                 var taskEnd = now;
                 if (t.deadline) { var dd = new Date(t.deadline + 'T23:59:59'); if (dd > taskEnd) taskEnd = dd; }
                 if (t.completed && t.completedAt) { var cd = new Date(t.completedAt); taskEnd = cd; }
-                // Overlap: taskStart <= rangeEnd AND taskEnd >= rangeStart
                 return taskStart <= rangeEnd && taskEnd >= rangeStart;
             });
+
+            // Apply status filter
+            if (priorityDistFilter === 'completed') {
+                inRange = inRange.filter(function(t) { return t.completed; });
+            } else if (priorityDistFilter === 'active') {
+                inRange = inRange.filter(function(t) { return !t.completed; });
+            }
 
             var impDist = [0,0,0,0,0,0,0,0,0,0];
             var urgDist = [0,0,0,0,0,0,0,0,0,0];
@@ -5763,10 +5767,11 @@
 
             function barRow(dist, color) {
                 var h = '';
-                for (var i = 0; i < dist.length; i++) {
+                // Render from 10 (high) to 1 (low)
+                for (var i = 9; i >= 0; i--) {
                     var pct = Math.round(dist[i] / maxVal * 100);
                     h += '<div class="pd-row">' +
-                        '<span class="pd-label">' + (i + 1) + '</span>' +
+                        '<span class="pd-label" style="font-weight:' + (i >= 7 ? '700' : '400') + ';">' + (i + 1) + '</span>' +
                         '<div class="pd-track"><div class="pd-fill" style="width:' + pct + '%;background:' + color + ';"></div></div>' +
                         '<span class="pd-count">' + dist[i] + '</span>' +
                         '</div>';
@@ -5775,12 +5780,15 @@
             }
 
             var html = '';
-            html += '<div style="margin-bottom:8px;display:flex;gap:6px;">';
+            html += '<div style="margin-bottom:8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;">';
             html += '<button class="trend-btn' + (priorityDistMode === 'week' ? ' active' : '') + '" onclick="switchPriorityDistMode(\'week\')">当周</button>';
             html += '<button class="trend-btn' + (priorityDistMode === 'month' ? ' active' : '') + '" onclick="switchPriorityDistMode(\'month\')">当月</button>';
-            html += '<span style="font-size:10px;color:var(--text-muted);margin-left:auto;align-self:center;">' + inRange.length + '个任务</span>';
+            html += '<span style="flex:1;"></span>';
+            html += '<button class="trend-btn' + (priorityDistFilter === 'all' ? ' active' : '') + '" onclick="switchPriorityDistFilter(\'all\')">全部</button>';
+            html += '<button class="trend-btn' + (priorityDistFilter === 'active' ? ' active' : '') + '" onclick="switchPriorityDistFilter(\'active\')">待完成</button>';
+            html += '<button class="trend-btn' + (priorityDistFilter === 'completed' ? ' active' : '') + '" onclick="switchPriorityDistFilter(\'completed\')">已完成</button>';
             html += '</div>';
-            html += '<div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:4px;">⬆ 重要程度</div>';
+            html += '<div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:4px;">⬆ 重要程度 <span style="font-size:10px;color:var(--text-muted);">(' + inRange.length + '个)</span></div>';
             html += barRow(impDist, '#4f6ef7');
             html += '<div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin:8px 0 4px;">⚡ 紧急程度</div>';
             html += barRow(urgDist, '#e74c3c');
@@ -5789,6 +5797,11 @@
 
         function switchPriorityDistMode(mode) {
             priorityDistMode = mode;
+            renderPriorityDist();
+        }
+
+        function switchPriorityDistFilter(filter) {
+            priorityDistFilter = filter;
             renderPriorityDist();
         }
 
