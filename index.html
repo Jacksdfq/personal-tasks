@@ -3404,23 +3404,15 @@
 
         function closeAllDotMenus() {
             var menus = document.querySelectorAll('.dot-menu.show');
-            for (var i = 0; i < menus.length; i++) {
-                menus[i].classList.remove('show');
-                var dot = menus[i].closest('.task-dot');
-                if (dot) { var tip = dot.querySelector('.task-dot-tooltip'); if (tip) tip.style.opacity = ''; }
-            }
+            for (var i = 0; i < menus.length; i++) menus[i].classList.remove('show');
         }
 
         function toggleDotMenu(id) {
             var menu = document.getElementById('menu-' + id);
             if (!menu) return;
-            var dot = menu.closest('.task-dot');
             var wasOpen = menu.classList.contains('show');
             closeAllDotMenus();
-            if (!wasOpen) {
-                menu.classList.add('show');
-                if (dot) { var tip = dot.querySelector('.task-dot-tooltip'); if (tip) tip.style.opacity = '0'; }
-            }
+            if (!wasOpen) menu.classList.add('show');
         }
 
         // ===================== RENDER LIST =====================
