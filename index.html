@@ -2802,7 +2802,8 @@
             syncProvider: '',
             syncUrl: '',
             syncToken: '',
-            autoSyncMin: 0,
+            autoPullMin: 0,
+            autoPushMin: 0,
             lastBackupDate: '',
             lastSyncDate: ''
         };
@@ -5974,14 +5975,6 @@
                     '<div class="form-group"><label>Gist ID</label>' +
                     '<input type="text" id="syncUrl" value="' + userSettings.syncUrl + '" onchange="userSettings.syncUrl=this.value;saveData();" placeholder="输入已有 Gist ID，或点击下方按钮创建..." style="width:100%;padding:8px 12px;border:2px solid var(--border);border-radius:10px;background:var(--bg-card);color:var(--text-primary);"></div>' +
                     '<button class="btn btn-ghost" onclick="createNewGist()" style="margin-top:4px;font-size:12px;">📝 创建新的云端存储</button>';
-                html += '<div class="form-group"><label>自动同步</label>' +
-                    '<select id="autoSyncMin" onchange="onAutoSyncChange(this.value)" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);">' +
-                    '<option value="0"' + (userSettings.autoSyncMin === 0 ? ' selected' : '') + '>关闭</option>' +
-                    '<option value="5"' + (userSettings.autoSyncMin === 5 ? ' selected' : '') + '>每 5 分钟</option>' +
-                    '<option value="15"' + (userSettings.autoSyncMin === 15 ? ' selected' : '') + '>每 15 分钟</option>' +
-                    '<option value="30"' + (userSettings.autoSyncMin === 30 ? ' selected' : '') + '>每 30 分钟</option>' +
-                    '<option value="60"' + (userSettings.autoSyncMin === 60 ? ' selected' : '') + '>每 1 小时</option>' +
-                    '</select></div>';
                 html += '<div style="background:var(--bg-secondary);border-radius:10px;padding:12px;margin:8px 0;font-size:12px;line-height:1.8;color:var(--text-secondary);">' +
                     '<div style="font-weight:600;color:var(--accent);margin-bottom:6px;">📖 GitHub Gist 使用说明</div>' +
                     '<div><b>GitHub Token 是什么？</b></div>' +
@@ -6014,87 +6007,115 @@
                     '<div style="margin-top:6px;"><b>手机端：</b></div>' +
                     '<div>1. 确保手机和电脑连接<b>同一 WiFi</b></div>' +
                     '<div>2. 上方填入电脑 IP 地址（默认端口 8765）</div>' +
-                    '<div>3. 点"拉取合并"开始同步</div>' +
+                    '<div>3. 点"拉取"获取数据，点"推送"上传数据</div>' +
                     '<div style="margin-top:6px;color:var(--text-muted);font-size:11px;">💡 手机浏览器也可以直接访问电脑 IP 来打开应用</div>' +
                     '</div>';
             }
+            if (userSettings.syncProvider) {
+                html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;"><div class="form-group"><label>自动拉取</label>' +
+                    '<select id="autoPullMin" onchange="onAutoPullChange(this.value)" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);width:100%;">' +
+                    '<option value="0"' + (userSettings.autoPullMin === 0 ? ' selected' : '') + '>关闭</option>' +
+                    '<option value="5"' + (userSettings.autoPullMin === 5 ? ' selected' : '') + '>每 5 分钟</option>' +
+                    '<option value="15"' + (userSettings.autoPullMin === 15 ? ' selected' : '') + '>每 15 分钟</option>' +
+                    '<option value="30"' + (userSettings.autoPullMin === 30 ? ' selected' : '') + '>每 30 分钟</option>' +
+                    '<option value="60"' + (userSettings.autoPullMin === 60 ? ' selected' : '') + '>每 1 小时</option>' +
+                    '</select></div><div class="form-group"><label>自动推送</label>' +
+                    '<select id="autoPushMin" onchange="onAutoPushChange(this.value)" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);width:100%;">' +
+                    '<option value="0"' + (userSettings.autoPushMin === 0 ? ' selected' : '') + '>关闭</option>' +
+                    '<option value="5"' + (userSettings.autoPushMin === 5 ? ' selected' : '') + '>每 5 分钟</option>' +
+                    '<option value="15"' + (userSettings.autoPushMin === 15 ? ' selected' : '') + '>每 15 分钟</option>' +
+                    '<option value="30"' + (userSettings.autoPushMin === 30 ? ' selected' : '') + '>每 30 分钟</option>' +
+                    '<option value="60"' + (userSettings.autoPushMin === 60 ? ' selected' : '') + '>每 1 小时</option>' +
+                    '</select></div></div>';
+            }
             html += '<div style="display:flex;gap:8px;margin-top:8px;">' +
-                '<button class="btn btn-primary" onclick="syncNow()">🔄 拉取合并</button>' +
-                '<button class="btn btn-ghost" onclick="forcePush()">📤 强制上传</button>' +
+                '<button class="btn btn-primary" onclick="pullNow()">📥 拉取</button>' +
+                '<button class="btn btn-ghost" onclick="pushNow()">📤 推送</button>' +
                 '</div>' +
                 '<div id="syncStatus"></div>' +
-                '<div style="background:var(--bg-secondary);border-radius:10px;padding:12px;margin:8px 0;font-size:12px;line-height:1.8;color:var(--text-secondary);">' +
-                '<div style="font-weight:600;color:var(--accent);margin-bottom:6px;">🔄 拉取合并工作原理</div>' +
-                '<div>拉取合并 = <b>拉取服务器数据 → 按更新时间比较 → 推送合并结果</b>，共三步：</div>' +
-                '<div style="margin-top:4px;">1. <b>拉取：</b>从服务器获取最新数据</div>' +
-                '<div>2. <b>合并：</b>逐条对比任务的 updatedAt 时间戳，<b>谁的更新时间晚就保留谁的</b></div>' +
-                '<div>3. <b>推送：</b>把合并后的完整数据存回服务器</div>' +
-                '<div style="margin-top:6px;padding:8px;background:var(--bg-card);border-radius:8px;font-size:11px;">' +
-                '<div>📱 <b>手机最新，电脑旧？</b>手机点拉取合并 → 数据上传到服务器 → 电脑再点一次即可。</div>' +
-                '<div>💻 <b>电脑最新，手机旧？</b>手机点拉取合并 → 从服务器拿到电脑的数据。</div>' +
-                '<div>🔀 <b>两边同时改了不同任务？</b>各自保留，最新的任务版本生效，不会丢失。</div>' +
-                '<div>⚠️ <b>两边改了同一个任务？</b>最后修改的生效（updatedAt 时间戳比较）。</div>' +
-                '</div>' +
-                '<div style="margin-top:6px;color:var(--text-muted);font-size:11px;">💡 建议每次操作前先点"拉取合并"获取最新数据，修改后再点一次推送。</div>' +
-                '</div>' +
                 '<div id="syncInfo" style="font-size:11px;color:var(--text-muted);margin-top:6px;">' +
-                (userSettings.lastSyncDate ? '上次同步：' + new Date(userSettings.lastSyncDate).toLocaleString() : '尚未同步') +
+                (userSettings.lastSyncDate ? '上次操作：' + new Date(userSettings.lastSyncDate).toLocaleString() : '尚未同步') +
                 '</div>';
             container.innerHTML = html;
         }
 
         function onSyncProviderChange(val) {
             userSettings.syncProvider = val;
-            if (!val) { userSettings.autoSyncMin = 0; clearAutoSync(); }
+            if (!val) {
+                userSettings.autoPullMin = 0;
+                userSettings.autoPushMin = 0;
+                clearAutoPull();
+                clearAutoPush();
+            }
             saveData();
             renderSyncSettings();
         }
 
-        function onAutoSyncChange(val) {
-            userSettings.autoSyncMin = parseInt(val) || 0;
+        function onAutoPullChange(val) {
+            userSettings.autoPullMin = parseInt(val) || 0;
             saveData();
-            var canSync = userSettings.syncProvider && userSettings.syncUrl &&
-                (userSettings.syncProvider === 'local' || userSettings.syncToken);
-            if (userSettings.autoSyncMin > 0 && canSync) {
-                setupAutoSync();
-            } else {
-                clearAutoSync();
+            if (userSettings.autoPullMin > 0) { setupAutoPull(); } else { clearAutoPull(); }
+        }
+
+        function onAutoPushChange(val) {
+            userSettings.autoPushMin = parseInt(val) || 0;
+            saveData();
+            if (userSettings.autoPushMin > 0) { setupAutoPush(); } else { clearAutoPush(); }
+        }
+
+        var _autoPullTimer = null;
+        var _autoPushTimer = null;
+        function setupAutoPull() {
+            clearAutoPull();
+            if (userSettings.autoPullMin > 0 && userSettings.syncProvider && userSettings.syncUrl) {
+                if (userSettings.syncProvider !== 'gist' || userSettings.syncToken) {
+                    _autoPullTimer = setInterval(autoPull, userSettings.autoPullMin * 60000);
+                }
             }
         }
 
-        var _autoSyncTimer = null;
-        function setupAutoSync() {
-            clearAutoSync();
-            if (userSettings.autoSyncMin > 0) {
-                _autoSyncTimer = setInterval(autoSync, userSettings.autoSyncMin * 60000);
+        function clearAutoPull() {
+            if (_autoPullTimer) { clearInterval(_autoPullTimer); _autoPullTimer = null; }
+        }
+
+        function setupAutoPush() {
+            clearAutoPush();
+            if (userSettings.autoPushMin > 0 && userSettings.syncProvider && userSettings.syncUrl) {
+                if (userSettings.syncProvider !== 'gist' || userSettings.syncToken) {
+                    _autoPushTimer = setInterval(autoPush, userSettings.autoPushMin * 60000);
+                }
             }
         }
 
-        function clearAutoSync() {
-            if (_autoSyncTimer) { clearInterval(_autoSyncTimer); _autoSyncTimer = null; }
+        function clearAutoPush() {
+            if (_autoPushTimer) { clearInterval(_autoPushTimer); _autoPushTimer = null; }
         }
 
-        function autoSync() {
+        function autoPull() {
             if (!userSettings.syncProvider || !userSettings.syncUrl) return;
             if (userSettings.syncProvider === 'gist' && !userSettings.syncToken) return;
             var pullFn = userSettings.syncProvider === 'local' ? pullFromLocal : pullFromGist;
-            var pushFn = userSettings.syncProvider === 'local' ? pushToLocal : pushToGist;
             pullFn(function(err, remote) {
                 if (!err && remote) {
                     var changed = mergeRemoteData(remote, true);
                     if (changed) {
                         saveData();
                         renderAll();
-                        showToast('info', '已自动同步');
+                        showToast('info', '已自动拉取数据');
                     }
                 }
-                // Push local changes after merge
-                pushFn(function(pushErr) {
-                    if (!pushErr) {
-                        userSettings.lastSyncDate = new Date().toISOString();
-                        saveData();
-                    }
-                });
+            });
+        }
+
+        function autoPush() {
+            if (!userSettings.syncProvider || !userSettings.syncUrl) return;
+            if (userSettings.syncProvider === 'gist' && !userSettings.syncToken) return;
+            var pushFn = userSettings.syncProvider === 'local' ? pushToLocal : pushToGist;
+            pushFn(function(err) {
+                if (!err) {
+                    userSettings.lastSyncDate = new Date().toISOString();
+                    saveData();
+                }
             });
         }
 
@@ -6134,8 +6155,8 @@
             });
         }
 
-        // Full sync: pull → merge → push (works for both gist and local)
-        function syncNow() {
+        // Manual pull: download from server → merge into local
+        function pullNow() {
             var statusEl = document.getElementById('syncStatus');
             if (!statusEl) return;
             if (window.location.protocol === 'file:') {
@@ -6152,10 +6173,9 @@
             }
 
             var pullFn = userSettings.syncProvider === 'local' ? pullFromLocal : pullFromGist;
-            var pushFn = userSettings.syncProvider === 'local' ? pushToLocal : pushToGist;
             var label = userSettings.syncProvider === 'local' ? '本地服务器' : '云端';
 
-            statusEl.innerHTML = '<div class="sync-status info">正在拉取' + label + '数据...</div>';
+            statusEl.innerHTML = '<div class="sync-status info">正在从' + label + '拉取数据...</div>';
 
             pullFn(function(pullErr, remote) {
                 if (pullErr) {
@@ -6170,20 +6190,45 @@
                 var changed = mergeRemoteData(remote, false);
                 saveData();
                 renderAll();
+                userSettings.lastSyncDate = new Date().toISOString();
+                saveData();
+                renderSyncSettings();
+                var el = document.getElementById('syncStatus');
+                if (el) el.innerHTML = '<div class="sync-status success">✅ 拉取成功 — ' + new Date().toLocaleTimeString() + (changed ? '（已合并' + label + '数据）' : '（数据已是最新）') + '</div>';
+            });
+        }
 
-                statusEl.innerHTML = '<div class="sync-status info">正在上传合并结果...</div>';
-                pushFn(function(pushErr) {
-                    if (pushErr) {
-                        statusEl.innerHTML = '<div class="sync-status error">上传失败：' + pushErr + '</div>';
-                    } else {
-                        userSettings.lastSyncDate = new Date().toISOString();
-                        saveData();
-                        if (changed) showToast('success', '已合并' + label + '数据');
-                        renderSyncSettings();
-                        var el = document.getElementById('syncStatus');
-                        if (el) el.innerHTML = '<div class="sync-status success">✅ 同步成功 — ' + new Date().toLocaleTimeString() + '</div>';
-                    }
-                });
+        // Manual push: upload local data to server
+        function pushNow() {
+            var statusEl = document.getElementById('syncStatus');
+            if (!statusEl) return;
+            if (window.location.protocol === 'file:') {
+                statusEl.innerHTML = '<div class="sync-status error">本地文件无法同步，请运行 python sync_server.py 后访问 http://localhost:8765</div>';
+                return;
+            }
+            if (!userSettings.syncProvider || !userSettings.syncUrl) {
+                statusEl.innerHTML = '<div class="sync-status error">请先配置同步方式</div>';
+                return;
+            }
+            if (userSettings.syncProvider === 'gist' && !userSettings.syncToken) {
+                statusEl.innerHTML = '<div class="sync-status error">请先配置 GitHub Token 和 Gist ID</div>';
+                return;
+            }
+
+            var pushFn = userSettings.syncProvider === 'local' ? pushToLocal : pushToGist;
+            var label = userSettings.syncProvider === 'local' ? '本地服务器' : '云端';
+
+            statusEl.innerHTML = '<div class="sync-status info">正在上传到' + label + '...</div>';
+            pushFn(function(pushErr) {
+                if (pushErr) {
+                    statusEl.innerHTML = '<div class="sync-status error">推送失败：' + pushErr + '</div>';
+                } else {
+                    userSettings.lastSyncDate = new Date().toISOString();
+                    saveData();
+                    renderSyncSettings();
+                    var el = document.getElementById('syncStatus');
+                    if (el) el.innerHTML = '<div class="sync-status success">✅ 推送成功 — ' + new Date().toLocaleTimeString() + '</div>';
+                }
             });
         }
 
@@ -6310,39 +6355,6 @@
         }
 
         // Force push (no pull, no merge — uploads local directly)
-        function forcePush() {
-            var statusEl = document.getElementById('syncStatus');
-            if (!statusEl) return;
-            if (window.location.protocol === 'file:') {
-                statusEl.innerHTML = '<div class="sync-status error">本地文件无法同步，请运行 python sync_server.py 后访问 http://localhost:8765</div>';
-                return;
-            }
-            if (!userSettings.syncProvider || !userSettings.syncUrl) {
-                statusEl.innerHTML = '<div class="sync-status error">请先配置同步方式</div>';
-                return;
-            }
-            if (userSettings.syncProvider === 'gist' && !userSettings.syncToken) {
-                statusEl.innerHTML = '<div class="sync-status error">请先配置 GitHub Token 和 Gist ID</div>';
-                return;
-            }
-
-            var pushFn = userSettings.syncProvider === 'local' ? pushToLocal : pushToGist;
-            var label = userSettings.syncProvider === 'local' ? '本地服务器' : '云端';
-
-            statusEl.innerHTML = '<div class="sync-status info">正在上传...</div>';
-            pushFn(function(pushErr) {
-                if (pushErr) {
-                    statusEl.innerHTML = '<div class="sync-status error">上传失败：' + pushErr + '</div>';
-                } else {
-                    userSettings.lastSyncDate = new Date().toISOString();
-                    saveData();
-                    renderSyncSettings();
-                    var el = document.getElementById('syncStatus');
-                    if (el) el.innerHTML = '<div class="sync-status success">✅ 上传成功 — ' + new Date().toLocaleTimeString() + '</div>';
-                }
-            });
-        }
-
         // Silent push after delete — auto-syncs deletion to server with no UI noise
         function silentPush() {
             if (!userSettings.syncProvider || !userSettings.syncUrl) return;
@@ -6405,7 +6417,7 @@
 
             if (remote.userSettings) {
                 var rs = remote.userSettings;
-                var protectedKeys = ['syncToken', 'syncUrl', 'syncProvider', 'autoSyncMin'];
+                var protectedKeys = ['syncToken', 'syncUrl', 'syncProvider', 'autoPullMin', 'autoPushMin'];
                 for (var key in rs) {
                     if (rs.hasOwnProperty(key) && protectedKeys.indexOf(key) === -1) {
                         if (userSettings[key] === undefined || userSettings[key] === '' || userSettings[key] === 0) {
@@ -6501,11 +6513,8 @@
         setInterval(checkOverdue, 60000);
         // Schedule reminders every hour
         setInterval(scheduleReminder, 3600000);
-        // Auto-sync on startup (with delay to not block UI)
-        setupAutoSync();
-        if (userSettings.autoSyncMin > 0) {
-            setTimeout(function() { autoSync(); }, 3000);
-        }
+        setupAutoPull();
+        setupAutoPush();
     </script>
 </body>
 </html>
