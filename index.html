@@ -2805,7 +2805,9 @@
             autoPullMin: 0,
             autoPushMin: 0,
             lastBackupDate: '',
-            lastSyncDate: ''
+            lastSyncDate: '',
+            lastPullDate: '',
+            lastPushDate: ''
         };
         var categories = [
             { id: 'work', name: '工作', color: '#e74c3c' },
@@ -6037,8 +6039,9 @@
                 '<div>🔼 <b>推送</b>：将本地所有数据上传到服务器，覆盖远端</div>' +
                 '</div>' +
                 '<div id="syncStatus"></div>' +
-                '<div id="syncInfo" style="font-size:11px;color:var(--text-muted);margin-top:6px;">' +
-                (userSettings.lastSyncDate ? '上次操作：' + new Date(userSettings.lastSyncDate).toLocaleString() : '尚未同步') +
+                '<div id="syncInfo" style="font-size:11px;color:var(--text-muted);margin-top:6px;line-height:1.6;">' +
+                '<div>🔽 上次拉取：' + (userSettings.lastPullDate ? new Date(userSettings.lastPullDate).toLocaleString() : '从未') + '</div>' +
+                '<div>🔼 上次推送：' + (userSettings.lastPushDate ? new Date(userSettings.lastPushDate).toLocaleString() : '从未') + '</div>' +
                 '</div>';
             container.innerHTML = html;
         }
@@ -6107,6 +6110,8 @@
                         renderAll();
                         showToast('info', '已自动拉取数据');
                     }
+                    userSettings.lastPullDate = new Date().toISOString();
+                    saveData();
                 }
             });
         }
@@ -6117,7 +6122,7 @@
             var pushFn = userSettings.syncProvider === 'local' ? pushToLocal : pushToGist;
             pushFn(function(err) {
                 if (!err) {
-                    userSettings.lastSyncDate = new Date().toISOString();
+                    userSettings.lastPushDate = new Date().toISOString();
                     saveData();
                 }
             });
@@ -6194,7 +6199,7 @@
                 var changed = mergeRemoteData(remote, false);
                 saveData();
                 renderAll();
-                userSettings.lastSyncDate = new Date().toISOString();
+                userSettings.lastPullDate = new Date().toISOString();
                 saveData();
                 renderSyncSettings();
                 var el = document.getElementById('syncStatus');
@@ -6227,7 +6232,7 @@
                 if (pushErr) {
                     statusEl.innerHTML = '<div class="sync-status error">推送失败：' + pushErr + '</div>';
                 } else {
-                    userSettings.lastSyncDate = new Date().toISOString();
+                    userSettings.lastPushDate = new Date().toISOString();
                     saveData();
                     renderSyncSettings();
                     var el = document.getElementById('syncStatus');
@@ -6366,7 +6371,7 @@
             var pushFn = userSettings.syncProvider === 'local' ? pushToLocal : pushToGist;
             pushFn(function(err) {
                 if (!err) {
-                    userSettings.lastSyncDate = new Date().toISOString();
+                    userSettings.lastPushDate = new Date().toISOString();
                     saveData();
                 }
             });
