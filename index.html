@@ -6029,8 +6029,12 @@
                     '</select></div></div>';
             }
             html += '<div style="display:flex;gap:8px;margin-top:8px;">' +
-                '<button class="btn btn-primary" onclick="pullNow()">📥 拉取</button>' +
-                '<button class="btn btn-ghost" onclick="pushNow()">📤 推送</button>' +
+                '<button class="btn btn-primary" onclick="pullNow()">🔽 拉取</button>' +
+                '<button class="btn btn-ghost" onclick="pushNow()">🔼 推送</button>' +
+                '</div>' +
+                '<div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.6;">' +
+                '<div>🔽 <b>拉取</b>：从服务器下载最新数据，按时间自动合并到本地</div>' +
+                '<div>🔼 <b>推送</b>：将本地所有数据上传到服务器，覆盖远端</div>' +
                 '</div>' +
                 '<div id="syncStatus"></div>' +
                 '<div id="syncInfo" style="font-size:11px;color:var(--text-muted);margin-top:6px;">' +
