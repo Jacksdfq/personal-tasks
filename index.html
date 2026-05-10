@@ -5956,7 +5956,7 @@
             var statusEl = document.getElementById('syncStatus');
             if (statusEl) statusEl.innerHTML = '<div class="sync-status info">正在创建云端存储...</div>';
 
-            var initData = { tasks: tasks, projects: projects, habits: habits, templates: templates, userSettings: userSettings, lastModified: new Date().toISOString() };
+            var initData = { tasks: tasks, projects: projects, habits: habits, templates: templates, userSettings: sanitizedSettings(), lastModified: new Date().toISOString() };
 
             fetch('https://api.github.com/gists', {
                 method: 'POST',
@@ -6072,11 +6072,22 @@
         }
 
         // Push local data to local server
+        // Return sanitized settings for upload (strip sensitive tokens)
+        function sanitizedSettings() {
+            var s = {};
+            for (var k in userSettings) {
+                if (userSettings.hasOwnProperty(k) && k !== 'syncToken') {
+                    s[k] = userSettings[k];
+                }
+            }
+            return s;
+        }
+
         function pushToLocal(callback) {
             var payload = {
                 tasks: tasks, projects: projects, habits: habits,
                 templates: templates,
-                userSettings: userSettings, lastModified: new Date().toISOString()
+                userSettings: sanitizedSettings(), lastModified: new Date().toISOString()
             };
             fetch(userSettings.syncUrl + '/api/data', {
                 method: 'POST',
@@ -6098,7 +6109,7 @@
                         content: JSON.stringify({
                             tasks: tasks, projects: projects, habits: habits,
                             templates: templates,
-                            userSettings: userSettings, lastModified: new Date().toISOString()
+                            userSettings: sanitizedSettings(), lastModified: new Date().toISOString()
                         }, null, 2)
                     }
                 }
