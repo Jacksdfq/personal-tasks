@@ -6029,16 +6029,23 @@
             if (!userSettings.syncProvider || !userSettings.syncUrl) return;
             if (userSettings.syncProvider === 'gist' && !userSettings.syncToken) return;
             var pullFn = userSettings.syncProvider === 'local' ? pullFromLocal : pullFromGist;
+            var pushFn = userSettings.syncProvider === 'local' ? pushToLocal : pushToGist;
             pullFn(function(err, remote) {
                 if (!err && remote) {
                     var changed = mergeRemoteData(remote, true);
                     if (changed) {
                         saveData();
                         renderAll();
-                        renderSyncSettings();
                         showToast('info', '已自动同步');
                     }
                 }
+                // Push local changes after merge
+                pushFn(function(pushErr) {
+                    if (!pushErr) {
+                        userSettings.lastSyncDate = new Date().toISOString();
+                        saveData();
+                    }
+                });
             });
         }
 
