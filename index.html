@@ -642,9 +642,9 @@
 
         .task-dot .dot-menu {
             position: absolute;
-            top: 50%;
+            top: 110%;
             left: 50%;
-            transform: translate(-50%, -50%);
+            transform: translateX(-50%);
             background: var(--bg-card);
             border-radius: 10px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.2);
@@ -654,6 +654,55 @@
             gap: 4px;
             flex-direction: column;
             min-width: 100px;
+        }
+
+        .task-dot.near-top .dot-menu {
+            top: 50%;
+            bottom: auto;
+            left: 110%;
+            transform: translateY(-50%);
+        }
+
+        .task-dot.near-bottom .dot-menu {
+            top: 50%;
+            bottom: auto;
+            left: 110%;
+            transform: translateY(-50%);
+        }
+
+        .task-dot.near-bottom.near-right .dot-menu {
+            left: 10%;
+        }
+
+        .task-dot.near-bottom.near-left .dot-menu {
+            left: auto;
+            right: 10%;
+        }
+
+        .task-dot.near-left .dot-menu {
+            left: auto;
+            right: 10%;
+            transform: none;
+        }
+
+        .task-dot.near-right .dot-menu {
+            left: 10%;
+            transform: none;
+        }
+
+        .task-dot.near-top.near-right .dot-menu {
+            left: 10%;
+            top: 50%;
+            bottom: auto;
+            transform: translateY(-50%);
+        }
+
+        .task-dot.near-top.near-left .dot-menu {
+            left: auto;
+            right: 10%;
+            top: 50%;
+            bottom: auto;
+            transform: translateY(-50%);
         }
 
         .task-dot .dot-menu.show { display: flex; }
