@@ -5819,7 +5819,16 @@
         function renderSyncSettings() {
             var container = document.getElementById('syncSettings');
             if (!container) return;
-            var html = '<div class="form-group"><label>同步方式</label>' +
+            var isFileProtocol = window.location.protocol === 'file:';
+            var html = '';
+            if (isFileProtocol) {
+                html += '<div style="background:rgba(245,158,11,0.12);border-radius:10px;padding:12px;margin-bottom:12px;font-size:12px;line-height:1.7;color:var(--warning);">' +
+                    '<div style="font-weight:700;margin-bottom:4px;">⚠️ 检测到你正在从本地文件打开此页面</div>' +
+                    '<div><code style="background:var(--bg-card);padding:1px 5px;border-radius:3px;">file://</code> 协议下浏览器禁止访问 GitHub API，同步功能无法使用。</div>' +
+                    '<div style="margin-top:4px;">请运行 <code style="background:var(--bg-card);padding:1px 5px;border-radius:3px;">python sync_server.py</code>，然后访问 <b style="color:var(--accent);">http://localhost:8765</b></div>' +
+                    '</div>';
+            }
+            html += '<div class="form-group"><label>同步方式</label>' +
                 '<select id="syncProvider" onchange="onSyncProviderChange(this.value)" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);">' +
                 '<option value="">不启用</option>' +
                 '<option value="gist"' + (userSettings.syncProvider === 'gist' ? ' selected' : '') + '>GitHub Gist（需 VPN）</option>' +
@@ -5988,6 +5997,10 @@
         function syncNow() {
             var statusEl = document.getElementById('syncStatus');
             if (!statusEl) return;
+            if (window.location.protocol === 'file:') {
+                statusEl.innerHTML = '<div class="sync-status error">本地文件无法同步，请运行 python sync_server.py 后访问 http://localhost:8765</div>';
+                return;
+            }
             if (!userSettings.syncProvider || !userSettings.syncUrl) {
                 statusEl.innerHTML = '<div class="sync-status error">请先配置同步方式</div>';
                 return;
@@ -6133,6 +6146,10 @@
         function forcePush() {
             var statusEl = document.getElementById('syncStatus');
             if (!statusEl) return;
+            if (window.location.protocol === 'file:') {
+                statusEl.innerHTML = '<div class="sync-status error">本地文件无法同步，请运行 python sync_server.py 后访问 http://localhost:8765</div>';
+                return;
+            }
             if (!userSettings.syncProvider || !userSettings.syncUrl) {
                 statusEl.innerHTML = '<div class="sync-status error">请先配置同步方式</div>';
                 return;
