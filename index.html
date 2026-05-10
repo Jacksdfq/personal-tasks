@@ -2730,22 +2730,14 @@
                         }
                     }
                 }
-                // Migrate: add updatedAt to items that don't have it
+                // Migrate: add updatedAt to items that don't have it (except tasks)
                 var now = new Date().toISOString();
                 var needsSave = false;
-                [tasks, projects, habits, templates].forEach(function(arr) {
+                [projects, habits, templates].forEach(function(arr) {
                     for (var i = 0; i < arr.length; i++) {
                         if (!arr[i].updatedAt) { arr[i].updatedAt = arr[i].createdAt || now; needsSave = true; }
                     }
                 });
-                // Repair: completed tasks with missing/invalid completedAt → use updatedAt/createdAt
-                for (var i = 0; i < tasks.length; i++) {
-                    var t = tasks[i];
-                    if (t.completed && (!t.completedAt || isNaN(new Date(t.completedAt).getTime()))) {
-                        t.completedAt = t.updatedAt || t.createdAt || now;
-                        needsSave = true;
-                    }
-                }
                 // Migrate v2 data
                 if (tasks.length > 0 && !tasks[0].hasOwnProperty('projectId')) {
                     for (var i = 0; i < tasks.length; i++) {
