@@ -2925,6 +2925,10 @@
                 </div>
             </div>
             <div class="form-group">
+                <label>每日目标次数（默认1）</label>
+                <input type="number" id="habitTargetInput" value="1" min="1" max="99" style="width:80px;padding:6px 10px;border:2px solid var(--border);border-radius:8px;background:var(--bg-card);color:var(--text-primary);">
+            </div>
+            <div class="form-group">
                 <label>颜色</label>
                 <input type="color" id="habitColorInput" value="#4f6ef7" style="width:60px;height:36px;border:none;border-radius:8px;cursor:pointer;">
             </div>
@@ -2946,6 +2950,12 @@
         </div>
     </div>
 
+
+    <!-- Habit Detail Popup -->
+    <div class="collection-popup" id="habitDetailPopup" style="max-width:480px;">
+        <div class="popup-header"></div>
+        <div class="popup-body"></div>
+    </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <script>
@@ -3026,6 +3036,12 @@
                         if (!arr[i].updatedAt) { arr[i].updatedAt = arr[i].createdAt || now; needsSave = true; }
                     }
                 });
+                // Migrate: add new habit fields for old data
+                for (var i = 0; i < habits.length; i++) {
+                    if (!habits[i].hasOwnProperty('bestStreak')) { habits[i].bestStreak = 0; needsSave = true; }
+                    if (!habits[i].hasOwnProperty('targetCount')) { habits[i].targetCount = 1; needsSave = true; }
+                    if (!habits[i].hasOwnProperty('archived')) { habits[i].archived = false; needsSave = true; }
+                }
                 // Migrate v2 data
                 if (tasks.length > 0 && !tasks[0].hasOwnProperty('projectId')) {
                     for (var i = 0; i < tasks.length; i++) {
@@ -5272,26 +5288,85 @@
         function renderHabitsTab() {
             var container = document.getElementById('habitsList');
             if (!container) return;
+            var activeHabits = habits.filter(function(h) { return !h.archived; });
             if (habits.length === 0) {
                 container.innerHTML = '<div class="empty-list">还没有习惯，点击上方"新建习惯"开始吧 🎯</div>';
                 return;
             }
-            var today = new Date().toISOString().slice(0, 10);
+            var today = new Date();
+            var todayStr = today.toISOString().slice(0, 10);
             var html = '';
+
+            // Today's habits quick panel
+            var activeToday = activeHabits.filter(function(h) {
+                return !h.records || !h.records[todayStr];
+            });
+            if (activeToday.length > 0) {
+                html += '<div style="background:var(--bg-secondary);border-radius:12px;padding:12px;margin-bottom:14px;">' +
+                    '<div style="font-weight:600;font-size:12px;color:var(--accent);margin-bottom:8px;">📌 今日待打卡 (' + activeToday.length + ')</div>' +
+                    '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
+                for (var i = 0; i < activeToday.length; i++) {
+                    var ah = activeToday[i];
+                    html += '<button class="btn btn-ghost" style="padding:6px 12px;font-size:12px;border-radius:20px;" ' +
+                        'onclick="toggleHabitDay(\'' + ah.id + '\',\'' + todayStr + '\');renderHabitsTab();">' +
+                        (ah.icon || '✅') + ' ' + ah.name + '</button>';
+                }
+                html += '</div></div>';
+            }
+
+            // Habit cards
             for (var i = 0; i < habits.length; i++) {
                 var h = habits[i];
                 var records = h.records || {};
+                var target = h.targetCount || 1;
+                var freqLabel = h.frequency === 'weekly' ? '周' : '天';
+
+                // Current streak
                 var streak = 0;
                 var d = new Date();
                 while (records[d.toISOString().slice(0, 10)]) { streak++; d.setDate(d.getDate() - 1); }
-                html += '<div class="habit-card">' +
+
+                // Best streak - update if current is better
+                if (streak > (h.bestStreak || 0)) { h.bestStreak = streak; saveData(); }
+
+                // Weekly completion
+                var weekDone = 0;
+                var weekStart = new Date(today);
+                weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+                for (var w = 0; w < 7; w++) {
+                    var wd = new Date(weekStart);
+                    wd.setDate(wd.getDate() + w);
+                    if (records[wd.toISOString().slice(0, 10)]) weekDone++;
+                }
+                var freqTotal = h.frequency === 'weekly' ? 1 : 7;
+                var weekRate = Math.round(weekDone / freqTotal * 100);
+
+                // Total completed days
+                var totalDays = Object.keys(records).length;
+
+                html += '<div class="habit-card' + (h.archived ? ' style="opacity:0.5;"' : '') + '">' +
                     '<div class="habit-header">' +
-                    '<span class="habit-name">' + (h.icon || '✅') + ' ' + h.name + '</span>' +
-                    '<span class="habit-streak">🔥 ' + streak + ' 天</span>' +
+                    '<span class="habit-name" onclick="openHabitDetail(\'' + h.id + '\')" style="cursor:pointer;">' +
+                    (h.icon || '✅') + ' ' + h.name +
+                    (h.targetCount > 1 ? ' <span style="font-size:10px;color:var(--text-muted);">×' + h.targetCount + '</span>' : '') +
+                    '</span>' +
+                    '<span class="habit-streak" style="display:flex;gap:8px;align-items:center;">' +
+                    '<span title="当前连续">🔥 ' + streak + '</span>' +
+                    '<span title="最佳记录" style="font-size:10px;color:var(--text-muted);">🏆 ' + (h.bestStreak || streak) + '</span>' +
+                    '<span title="本周' + weekDone + '/' + freqTotal + '" style="font-size:10px;color:var(--accent);">📊 ' + weekRate + '%</span>' +
+                    '</span>' +
                     '<div class="habit-actions">' +
-                    '<button class="btn btn-ghost" style="padding:4px 8px;font-size:11px;" onclick="editHabit(\'' + h.id + '\')">✏️</button>' +
-                    '<button class="btn btn-ghost" style="padding:4px 8px;font-size:11px;" onclick="deleteHabit(\'' + h.id + '\')">🗑️</button>' +
+                    (h.archived
+                        ? '<button class="btn btn-ghost" style="padding:4px 8px;font-size:11px;" onclick="toggleArchiveHabit(\'' + h.id + '\')">📂 恢复</button>'
+                        : '<button class="btn btn-ghost" style="padding:4px 8px;font-size:11px;" onclick="editHabit(\'' + h.id + '\')">✏️</button>' +
+                          '<button class="btn btn-ghost" style="padding:4px 8px;font-size:11px;" onclick="toggleArchiveHabit(\'' + h.id + '\')">📦</button>' +
+                          '<button class="btn btn-ghost" style="padding:4px 8px;font-size:11px;" onclick="deleteHabit(\'' + h.id + '\')">🗑️</button>') +
                     '</div></div>' +
+                    // Mini progress bar for weekly completion
+                    '<div style="padding:0 0 6px;display:flex;align-items:center;gap:6px;font-size:10px;color:var(--text-muted);">' +
+                    '<div style="flex:1;height:4px;background:var(--bg-secondary);border-radius:2px;overflow:hidden;">' +
+                    '<div style="height:100%;width:' + weekRate + '%;background:' + (h.color || '#4f6ef7') + ';border-radius:2px;transition:width 0.3s;"></div></div>' +
+                    '<span>累计 ' + totalDays + ' ' + freqLabel + '</span></div>' +
                     '<div class="habit-grid" id="habitGrid-' + h.id + '"></div></div>';
             }
             container.innerHTML = html;
@@ -5347,6 +5422,7 @@
                 document.getElementById('habitNameInput').value = h.name;
                 document.getElementById('habitIconInput').value = h.icon || '✅';
                 document.getElementById('habitColorInput').value = h.color || '#4f6ef7';
+                document.getElementById('habitTargetInput').value = h.targetCount || 1;
                 selectHabitFrequency(h.frequency || 'daily');
             } else {
                 document.getElementById('habitModalTitle').textContent = '🎯 新建习惯';
@@ -5354,6 +5430,7 @@
                 document.getElementById('habitNameInput').value = '';
                 document.getElementById('habitIconInput').value = '✅';
                 document.getElementById('habitColorInput').value = '#4f6ef7';
+                document.getElementById('habitTargetInput').value = 1;
                 selectHabitFrequency('daily');
             }
             modal.classList.add('show');
@@ -5393,15 +5470,20 @@
                     h.icon = icon;
                     h.color = color;
                     h.frequency = freq;
+                    h.targetCount = parseInt(document.getElementById('habitTargetInput').value) || 1;
                     h.updatedAt = new Date().toISOString();
                 }
             } else {
+                var targetCount = parseInt(document.getElementById('habitTargetInput').value) || 1;
                 habits.push({
                     id: 'h_' + Date.now(),
                     name: name,
                     icon: icon,
                     color: color,
                     frequency: freq,
+                    targetCount: targetCount,
+                    bestStreak: 0,
+                    archived: false,
                     records: {},
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString()
@@ -5414,6 +5496,83 @@
         }
 
         function editHabit(id) { openHabitModal(id); }
+
+        function toggleArchiveHabit(id) {
+            var h = habits.find(function(x) { return x.id === id; });
+            if (!h) return;
+            h.archived = !h.archived;
+            saveData();
+            renderHabitsTab();
+            showToast('success', h.archived ? '已归档' : '已恢复');
+        }
+
+        function openHabitDetail(id) {
+            var h = habits.find(function(x) { return x.id === id; });
+            if (!h) return;
+            var records = h.records || {};
+            var today = new Date();
+            var todayStr = today.toISOString().slice(0, 10);
+
+            // Build 3-month calendar view
+            var html = '<div style="text-align:center;font-size:16px;font-weight:700;margin-bottom:12px;">' + (h.icon || '') + ' ' + h.name + '</div>';
+
+            // Stats
+            var totalDays = Object.keys(records).length;
+            var streak = 0;
+            var d = new Date();
+            while (records[d.toISOString().slice(0, 10)]) { streak++; d.setDate(d.getDate() - 1); }
+            var weekDone = 0;
+            for (var w = 0; w < 7; w++) {
+                var wd = new Date(today);
+                wd.setDate(wd.getDate() - wd.getDay() + w);
+                if (records[wd.toISOString().slice(0, 10)]) weekDone++;
+            }
+            var monthDone = 0;
+            for (var m = 0; m < today.getDate(); m++) {
+                var md = new Date(today.getFullYear(), today.getMonth(), m + 1);
+                if (records[md.toISOString().slice(0, 10)]) monthDone++;
+            }
+
+            html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;text-align:center;">' +
+                '<div style="background:var(--bg-secondary);padding:8px;border-radius:8px;"><div style="font-size:20px;font-weight:700;color:var(--warning);">🔥 ' + streak + '</div><div style="font-size:10px;color:var(--text-muted);">当前连续</div></div>' +
+                '<div style="background:var(--bg-secondary);padding:8px;border-radius:8px;"><div style="font-size:20px;font-weight:700;color:var(--accent);">🏆 ' + (h.bestStreak || streak) + '</div><div style="font-size:10px;color:var(--text-muted);">最佳记录</div></div>' +
+                '<div style="background:var(--bg-secondary);padding:8px;border-radius:8px;"><div style="font-size:20px;font-weight:700;">📅 ' + totalDays + '</div><div style="font-size:10px;color:var(--text-muted);">累计天数</div></div>' +
+                '</div>';
+
+            html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;text-align:center;">' +
+                '<div style="background:var(--bg-secondary);padding:8px;border-radius:8px;"><div style="font-weight:600;">本周 ' + weekDone + '/7</div><div style="font-size:10px;color:var(--text-muted);">周完成率</div></div>' +
+                '<div style="background:var(--bg-secondary);padding:8px;border-radius:8px;"><div style="font-weight:600;">本月 ' + monthDone + '/' + today.getDate() + '</div><div style="font-size:10px;color:var(--text-muted);">月完成率</div></div>' +
+                '</div>';
+
+            // 3-month mini calendar
+            html += '<div style="display:flex;gap:8px;overflow-x:auto;">';
+            for (var mon = 2; mon >= 0; mon--) {
+                var mDate = new Date(today.getFullYear(), today.getMonth() - mon, 1);
+                var mName = (mDate.getFullYear()) + '/' + (mDate.getMonth() + 1);
+                var daysInMonth = new Date(mDate.getFullYear(), mDate.getMonth() + 1, 0).getDate();
+                html += '<div style="min-width:140px;"><div style="font-size:11px;font-weight:600;text-align:center;margin-bottom:4px;">' + mName + '</div>';
+                html += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;">';
+                for (var day = 1; day <= daysInMonth; day++) {
+                    var ds = new Date(mDate.getFullYear(), mDate.getMonth(), day).toISOString().slice(0, 10);
+                    var done = !!records[ds];
+                    var isToday = ds === todayStr;
+                    var isFuture = ds > todayStr;
+                    html += '<div style="width:16px;height:16px;border-radius:3px;background:' + (done ? (h.color || '#4f6ef7') : 'var(--bg-secondary)') +
+                        (isToday ? ';border:2px solid var(--accent)' : '') +
+                        (isFuture ? ';opacity:0.3' : '') +
+                        ';" title="' + ds + (done ? ' ✓' : '') + '"></div>';
+                }
+                html += '</div></div>';
+            }
+            html += '</div>';
+
+            var popup = document.getElementById('habitDetailPopup');
+            popup.querySelector('.popup-body').innerHTML = html;
+            popup.querySelector('.popup-header').innerHTML =
+                '<span>' + (h.icon || '') + ' ' + h.name + '</span>' +
+                '<button class="popup-close" onclick="document.getElementById(\'habitDetailPopup\').classList.remove(\'show\')">✕</button>';
+            popup.classList.add('show');
+        }
 
         function deleteHabit(id) {
             if (!confirm('确定要删除该习惯吗？')) return;
