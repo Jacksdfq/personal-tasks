@@ -6446,10 +6446,8 @@
         // Schedule reminders every hour
         setInterval(scheduleReminder, 3600000);
         // Auto-sync on startup (with delay to not block UI)
-        var canAutoSync = userSettings.syncProvider && userSettings.syncUrl &&
-            (userSettings.syncProvider === 'local' || userSettings.syncToken);
-        if (canAutoSync) {
-            setupAutoSync();
+        setupAutoSync();
+        if (userSettings.autoSyncMin > 0) {
             setTimeout(function() { autoSync(); }, 3000);
         }
     </script>
