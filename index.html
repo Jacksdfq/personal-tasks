@@ -5944,8 +5944,8 @@
             if (!userSettings.syncProvider || !userSettings.syncUrl) return;
             if (userSettings.syncProvider === 'gist' && !userSettings.syncToken) return;
             var pullFn = userSettings.syncProvider === 'local' ? pullFromLocal : pullFromGist;
-            pullFn(function(remote) {
-                if (remote) {
+            pullFn(function(err, remote) {
+                if (!err && remote) {
                     var changed = mergeRemoteData(remote, true);
                     if (changed) {
                         saveData();
@@ -6016,9 +6016,13 @@
 
             statusEl.innerHTML = '<div class="sync-status info">正在拉取' + label + '数据...</div>';
 
-            pullFn(function(remote) {
+            pullFn(function(pullErr, remote) {
+                if (pullErr) {
+                    statusEl.innerHTML = '<div class="sync-status error">拉取失败：' + pullErr + '</div>';
+                    return;
+                }
                 if (!remote) {
-                    statusEl.innerHTML = '<div class="sync-status error">无法读取' + label + '数据，请检查地址和网络</div>';
+                    statusEl.innerHTML = '<div class="sync-status error">' + label + '返回空数据，请先创建云端存储</div>';
                     return;
                 }
                 statusEl.innerHTML = '<div class="sync-status info">正在合并数据...</div>';
@@ -6027,16 +6031,16 @@
                 renderAll();
 
                 statusEl.innerHTML = '<div class="sync-status info">正在上传合并结果...</div>';
-                pushFn(function(success) {
-                    if (success) {
+                pushFn(function(pushErr) {
+                    if (pushErr) {
+                        statusEl.innerHTML = '<div class="sync-status error">上传失败：' + pushErr + '</div>';
+                    } else {
                         userSettings.lastSyncDate = new Date().toISOString();
                         saveData();
                         if (changed) showToast('success', '已合并' + label + '数据');
                         renderSyncSettings();
                         var el = document.getElementById('syncStatus');
                         if (el) el.innerHTML = '<div class="sync-status success">✅ 同步成功 — ' + new Date().toLocaleTimeString() + '</div>';
-                    } else {
-                        statusEl.innerHTML = '<div class="sync-status error">上传失败，请检查网络</div>';
                     }
                 });
             });
@@ -6044,44 +6048,56 @@
 
         // Pull data from Gist
         function pullFromGist(callback) {
-            fetch('https://api.github.com/gists/' + userSettings.syncUrl, {
+            var url = 'https://api.github.com/gists/' + userSettings.syncUrl;
+            fetch(url, {
                 headers: {
                     'Authorization': 'token ' + userSettings.syncToken,
                     'Accept': 'application/vnd.github.v3+json'
                 }
             }).then(function(res) {
-                if (!res.ok) { callback(null); return; }
+                if (res.status === 401) { callback('Token 无效或已过期（HTTP 401）', null); return; }
+                if (res.status === 404) { callback('Gist 不存在，请检查 Gist ID（HTTP 404）', null); return; }
+                if (res.status === 403) { callback('访问被拒绝，可能是 API 限流（HTTP 403）', null); return; }
+                if (!res.ok) { callback('GitHub API 返回错误（HTTP ' + res.status + '）', null); return; }
                 return res.json();
             }).then(function(gist) {
-                if (!gist || !gist.files || !gist.files['personal_tasks.json']) {
-                    callback(null);
+                if (!gist || !gist.files) {
+                    callback('Gist 数据为空，请先创建云端存储', null);
+                    return;
+                }
+                if (!gist.files['personal_tasks.json']) {
+                    callback('Gist 中未找到 personal_tasks.json，请重新创建云端存储', null);
                     return;
                 }
                 try {
                     var content = gist.files['personal_tasks.json'].content;
-                    if (!content || content.trim() === '') { callback(null); return; }
+                    if (!content || content.trim() === '') {
+                        callback('Gist 中数据为空', null);
+                        return;
+                    }
                     var data = JSON.parse(content);
-                    callback(data);
+                    callback(null, data);
                 } catch(e) {
-                    callback(null);
+                    callback('Gist 数据格式错误，无法解析 JSON', null);
                 }
-            }).catch(function() {
-                callback(null);
+            }).catch(function(e) {
+                callback('网络连接失败，请检查 VPN 是否开启（' + e.message + '）', null);
             });
         }
 
         // Pull data from local server
         function pullFromLocal(callback) {
-            fetch(userSettings.syncUrl + '/api/data', {
+            var url = userSettings.syncUrl + '/api/data';
+            fetch(url, {
                 method: 'GET',
                 headers: { 'Accept': 'application/json' }
             }).then(function(res) {
-                if (!res.ok) { callback(null); return; }
+                if (!res.ok) { callback('本地服务器返回错误（HTTP ' + res.status + '），请确认 sync_server.py 已启动', null); return; }
                 return res.json();
             }).then(function(data) {
-                callback(data || null);
-            }).catch(function() {
-                callback(null);
+                callback(null, data || null);
+            }).catch(function(e) {
+                callback('无法连接本地服务器（' + e.message + '），请确认电脑和手机在同一 WiFi，且 sync_server.py 已启动', null);
             });
         }
 
@@ -6108,9 +6124,10 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             }).then(function(res) {
-                callback(res.ok);
-            }).catch(function() {
-                callback(false);
+                if (!res.ok) { callback('本地服务器返回错误（HTTP ' + res.status + '）'); return; }
+                callback(null);
+            }).catch(function(e) {
+                callback('无法连接本地服务器（' + e.message + '）');
             });
         }
 
@@ -6137,9 +6154,13 @@
                 },
                 body: JSON.stringify(payload)
             }).then(function(res) {
-                callback(res.ok);
-            }).catch(function() {
-                callback(false);
+                if (res.status === 401) { callback('Token 无效或已过期（HTTP 401）'); return; }
+                if (res.status === 404) { callback('Gist 不存在，请检查 Gist ID（HTTP 404）'); return; }
+                if (res.status === 403) { callback('访问被拒绝，可能是 API 限流（HTTP 403）'); return; }
+                if (!res.ok) { callback('GitHub API 返回错误（HTTP ' + res.status + '）'); return; }
+                callback(null);
+            }).catch(function(e) {
+                callback('网络连接失败，请检查 VPN 是否开启（' + e.message + '）');
             });
         }
 
@@ -6164,15 +6185,15 @@
             var label = userSettings.syncProvider === 'local' ? '本地服务器' : '云端';
 
             statusEl.innerHTML = '<div class="sync-status info">正在上传...</div>';
-            pushFn(function(success) {
-                if (success) {
+            pushFn(function(pushErr) {
+                if (pushErr) {
+                    statusEl.innerHTML = '<div class="sync-status error">上传失败：' + pushErr + '</div>';
+                } else {
                     userSettings.lastSyncDate = new Date().toISOString();
                     saveData();
                     renderSyncSettings();
                     var el = document.getElementById('syncStatus');
                     if (el) el.innerHTML = '<div class="sync-status success">✅ 上传成功 — ' + new Date().toLocaleTimeString() + '</div>';
-                } else {
-                    statusEl.innerHTML = '<div class="sync-status error">上传失败，请检查网络和地址</div>';
                 }
             });
         }
