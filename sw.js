@@ -1,84 +1,59 @@
-const CACHE_NAME = 'personal-tasks-v3';
-const urlsToCache = [
-  '/',
-  '/index.html',
-  '/manifest.json'
-];
+var CACHE_NAME = 'personal-tasks-v4';
+var BASE = self.location.pathname.replace(/\/[^/]*$/, '');
 
-self.addEventListener('install', event => {
+self.addEventListener('install', function(event) {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(urlsToCache))
-      .then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then(function(cache) {
+      return cache.addAll([BASE + '/', BASE + '/index.html', BASE + '/manifest.json']);
+    }).then(function() { return self.skipWaiting(); })
   );
 });
 
-self.addEventListener('activate', event => {
+self.addEventListener('activate', function(event) {
   event.waitUntil(
-    caches.keys().then(cacheNames => {
+    caches.keys().then(function(cacheNames) {
       return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
+        cacheNames.map(function(cacheName) {
+          if (cacheName !== CACHE_NAME) return caches.delete(cacheName);
         })
       );
-    }).then(() => self.clients.claim())
+    }).then(function() { return self.clients.claim(); })
   );
 });
 
-self.addEventListener('fetch', event => {
-  // Skip cross-origin requests (e.g., Chart.js CDN)
-  if (!event.request.url.startsWith(self.location.origin)) {
-    return;
-  }
+self.addEventListener('fetch', function(event) {
+  if (!event.request.url.startsWith(self.location.origin)) return;
   event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        if (response) {
-          return response;
-        }
-        return fetch(event.request)
-          .then(response => {
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
-            const responseToCache = response.clone();
-            caches.open(CACHE_NAME)
-              .then(cache => {
-                cache.put(event.request, responseToCache);
-              });
-            return response;
-          });
-      })
-  );
-});
-
-self.addEventListener('notificationclick', event => {
-  event.notification.close();
-  // Focus on the main window
-  event.waitUntil(
-    clients.matchAll({ type: 'window' }).then(clientList => {
-      for (const client of clientList) {
-        if (client.url && 'focus' in client) {
-          return client.focus();
-        }
-      }
-      if (clients.openWindow) {
-        return clients.openWindow('/');
-      }
+    caches.match(event.request).then(function(response) {
+      if (response) return response;
+      return fetch(event.request).then(function(response) {
+        if (!response || response.status !== 200 || response.type !== 'basic') return response;
+        var toCache = response.clone();
+        caches.open(CACHE_NAME).then(function(cache) { cache.put(event.request, toCache); });
+        return response;
+      });
     })
   );
 });
 
-// Handle periodic sync for reminders (if supported)
-self.addEventListener('periodicsync', event => {
+self.addEventListener('notificationclick', function(event) {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window' }).then(function(clientList) {
+      for (var i = 0; i < clientList.length; i++) {
+        var client = clientList[i];
+        if (client.url && 'focus' in client) return client.focus();
+      }
+      if (clients.openWindow) return clients.openWindow(BASE + '/');
+    })
+  );
+});
+
+self.addEventListener('periodicsync', function(event) {
   if (event.tag === 'check-reminders') {
     event.waitUntil(
-      clients.matchAll().then(clients => {
-        clients.forEach(client => {
-          client.postMessage({ type: 'check-reminders' });
-        });
+      clients.matchAll().then(function(clients) {
+        clients.forEach(function(client) { client.postMessage({ type: 'check-reminders' }); });
       })
     );
   }
