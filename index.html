@@ -2058,10 +2058,10 @@
             *, *::before, *::after { box-sizing: border-box; }
 
             body { padding: 8px; overflow-x: hidden; }
-            .app-header { flex-direction: row; align-items: center; gap: 6px; flex-wrap: nowrap; }
-            .app-header h1 { font-size: 15px; white-space: nowrap; flex-shrink: 0; }
+            .app-header { flex-direction: column; align-items: stretch; gap: 6px; }
+            .app-header h1 { font-size: 16px; text-align: left; }
             .app-header h1 span { display: none; }
-            .header-actions { gap: 3px; flex-wrap: nowrap; margin-left: auto; }
+            .header-actions { gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
             .header-actions .btn { padding: 5px 8px; font-size: 10px; white-space: nowrap; }
             .header-actions .btn-icon { width: 30px; height: 30px; font-size: 13px; flex-shrink: 0; }
 
