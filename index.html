@@ -2742,6 +2742,7 @@
     <script>
         // ===================== DATA MODEL =====================
         var tasks = [];
+        var deletedTaskIds = [];
         var projects = [];
         var habits = [];
         var templates = [];
@@ -2794,6 +2795,7 @@
                 if (s) {
                     var d = JSON.parse(s);
                     tasks = d.tasks || [];
+                    deletedTaskIds = d.deletedTaskIds || [];
                     nextId = d.nextId || 1;
                     projects = d.projects || [];
                     habits = d.habits || [];
@@ -2843,6 +2845,7 @@
         function saveData() {
             localStorage.setItem('personal_tasks_v3', JSON.stringify({
                 tasks: tasks,
+                deletedTaskIds: deletedTaskIds,
                 nextId: nextId,
                 projects: projects,
                 habits: habits,
@@ -3153,6 +3156,7 @@
                         if (data.projects) projects = data.projects;
                         if (data.habits) habits = data.habits;
                         if (data.templates) templates = data.templates;
+                        deletedTaskIds = data.deletedTaskIds || [];
                         if (data.userSettings) {
                             for (var k in data.userSettings) {
                                 if (userSettings.hasOwnProperty(k)) userSettings[k] = data.userSettings[k];
@@ -3738,10 +3742,14 @@
             if (ids.length === 0) return;
             if (!confirm('确定删除 ' + ids.length + ' 个任务吗？')) return;
             tasks = tasks.filter(function(t) { return !selectedTasks[t.id]; });
+            for (var j = 0; j < ids.length; j++) {
+                if (deletedTaskIds.indexOf(ids[j]) === -1) deletedTaskIds.push(ids[j]);
+            }
             selectedTasks = {};
             saveData();
             renderAll();
             showToast('success', '已删除 ' + ids.length + ' 个任务');
+            silentPush();
         }
 
         function batchChangeCategory() {
@@ -4382,15 +4390,18 @@
             if (!t || !confirm('确定要删除该任务吗？')) return;
             undoData = { type: 'delete', task: t, expires: Date.now() + 5000 };
             tasks = tasks.filter(function(x) { return x.id !== id; });
+            if (deletedTaskIds.indexOf(id) === -1) deletedTaskIds.push(id);
             saveData();
             renderAll();
             showUndoToast();
+            silentPush();
         }
 
         function performUndo() {
             if (!undoData) return;
             if (undoData.type === 'delete') {
                 tasks.push(undoData.task);
+                deletedTaskIds = deletedTaskIds.filter(function(x) { return x !== undoData.task.id; });
                 showToast('success', '已恢复「' + undoData.task.name + '」');
             } else if (undoData.type === 'move') {
                 var t = tasks.find(function(x) { return x.id === undoData.task.id; });
@@ -6199,6 +6210,8 @@
                 body: JSON.stringify(payload)
             }).then(function(res) {
                 if (!res.ok) { callback('本地服务器返回错误（HTTP ' + res.status + '）'); return; }
+                deletedTaskIds = [];
+                saveData();
                 callback(null);
             }).catch(function(e) {
                 callback('无法连接本地服务器（' + e.message + '）');
@@ -6232,6 +6245,8 @@
                 if (res.status === 404) { callback('Gist 不存在，请检查 Gist ID（HTTP 404）'); return; }
                 if (res.status === 403) { callback('访问被拒绝，可能是 API 限流（HTTP 403）'); return; }
                 if (!res.ok) { callback('GitHub API 返回错误（HTTP ' + res.status + '）'); return; }
+                deletedTaskIds = [];
+                saveData();
                 callback(null);
             }).catch(function(e) {
                 callback('网络连接失败，请检查 VPN 是否开启（' + e.message + '）');
@@ -6272,6 +6287,19 @@
             });
         }
 
+        // Silent push after delete — auto-syncs deletion to server with no UI noise
+        function silentPush() {
+            if (!userSettings.syncProvider || !userSettings.syncUrl) return;
+            if (userSettings.syncProvider === 'gist' && !userSettings.syncToken) return;
+            var pushFn = userSettings.syncProvider === 'local' ? pushToLocal : pushToGist;
+            pushFn(function(err) {
+                if (!err) {
+                    userSettings.lastSyncDate = new Date().toISOString();
+                    saveData();
+                }
+            });
+        }
+
         // Merge remote data into local. Returns true if any data changed.
         function mergeRemoteData(remote, silent) {
             var changed = false;
@@ -6279,6 +6307,12 @@
             var rProjects = remote.projects || [];
             var rHabits = remote.habits || [];
             var rTemplates = remote.templates || [];
+
+            // Build skip set: don't re-add tasks that were deleted locally
+            var skipIds = {};
+            for (var d = 0; d < deletedTaskIds.length; d++) {
+                skipIds[deletedTaskIds[d]] = true;
+            }
 
             function mergeArray(localArr, remoteArr, idKey) {
                 var localIndex = {};
@@ -6288,6 +6322,7 @@
                 for (var j = 0; j < remoteArr.length; j++) {
                     var rItem = remoteArr[j];
                     var rId = rItem[idKey];
+                    if (skipIds[rId]) continue; // Skip locally deleted items
                     var localIdx = localIndex[rId];
                     if (localIdx === undefined) {
                         localArr.push(rItem);
