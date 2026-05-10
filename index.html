@@ -5839,6 +5839,21 @@
                     '<option value="30"' + (userSettings.autoSyncMin === 30 ? ' selected' : '') + '>每 30 分钟</option>' +
                     '<option value="60"' + (userSettings.autoSyncMin === 60 ? ' selected' : '') + '>每 1 小时</option>' +
                     '</select></div>';
+                html += '<div style="background:var(--bg-secondary);border-radius:10px;padding:12px;margin:8px 0;font-size:12px;line-height:1.8;color:var(--text-secondary);">' +
+                    '<div style="font-weight:600;color:var(--accent);margin-bottom:6px;">📖 GitHub Gist 使用说明</div>' +
+                    '<div><b>GitHub Token 是什么？</b></div>' +
+                    '<div>Token 是 GitHub 的访问凭证，类似密码，用于读写你的云端数据。</div>' +
+                    '<div style="margin-top:6px;"><b>如何获取 Token？</b></div>' +
+                    '<div>1. 打开 <a href="https://github.com/settings/tokens" target="_blank" style="color:var(--accent);">github.com/settings/tokens</a></div>' +
+                    '<div>2. 点击 Generate new token → <b>Generate new token (classic)</b></div>' +
+                    '<div>3. 勾选 <b>gist</b> 权限，点击底部的 Generate token</div>' +
+                    '<div>4. 复制生成的 Token（以 ghp_ 开头），粘贴到上方输入框</div>' +
+                    '<div style="margin-top:6px;"><b>Gist ID 是什么？</b></div>' +
+                    '<div>Gist 是 GitHub 提供的文本存储服务，每个 Gist 有唯一的 ID。</div>' +
+                    '<div>填入 Token 后，点击下方<b>"创建新的云端存储"</b>自动生成。</div>' +
+                    '<div>如果你已有一个 Gist，直接填入它的 ID 即可。</div>' +
+                    '<div style="margin-top:6px;color:var(--text-muted);font-size:11px;">⚠️ Token 仅保存在你当前浏览器中，不会上传到任何服务器。在中国大陆使用需开启 VPN。</div>' +
+                    '</div>';
             }
             if (userSettings.syncProvider === 'local') {
                 if (!userSettings.syncUrl) userSettings.syncUrl = 'http://192.168.1.100:8765';
