@@ -6031,10 +6031,10 @@
                     if (success) {
                         userSettings.lastSyncDate = new Date().toISOString();
                         saveData();
-                        var el = document.getElementById('syncStatus');
-                        if (el) el.innerHTML = '<div class="sync-status success">✅ 同步成功 — ' + new Date().toLocaleTimeString() + '</div>';
                         if (changed) showToast('success', '已合并' + label + '数据');
                         renderSyncSettings();
+                        var el = document.getElementById('syncStatus');
+                        if (el) el.innerHTML = '<div class="sync-status success">✅ 同步成功 — ' + new Date().toLocaleTimeString() + '</div>';
                     } else {
                         statusEl.innerHTML = '<div class="sync-status error">上传失败，请检查网络</div>';
                     }
@@ -6168,9 +6168,9 @@
                 if (success) {
                     userSettings.lastSyncDate = new Date().toISOString();
                     saveData();
+                    renderSyncSettings();
                     var el = document.getElementById('syncStatus');
                     if (el) el.innerHTML = '<div class="sync-status success">✅ 上传成功 — ' + new Date().toLocaleTimeString() + '</div>';
-                    renderSyncSettings();
                 } else {
                     statusEl.innerHTML = '<div class="sync-status error">上传失败，请检查网络和地址</div>';
                 }
