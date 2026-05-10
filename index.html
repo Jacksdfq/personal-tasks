@@ -5562,7 +5562,8 @@
             var html = '<div class="form-group"><label>同步方式</label>' +
                 '<select id="syncProvider" onchange="onSyncProviderChange(this.value)" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);">' +
                 '<option value="">不启用</option>' +
-                '<option value="gist"' + (userSettings.syncProvider === 'gist' ? ' selected' : '') + '>GitHub Gist</option>' +
+                '<option value="gist"' + (userSettings.syncProvider === 'gist' ? ' selected' : '') + '>GitHub Gist（需 VPN）</option>' +
+                '<option value="local"' + (userSettings.syncProvider === 'local' ? ' selected' : '') + '>本地网络（无需外网）</option>' +
                 '</select></div>';
             if (userSettings.syncProvider === 'gist') {
                 html += '<div class="form-group"><label>GitHub Token</label>' +
@@ -5578,6 +5579,12 @@
                     '<option value="30"' + (userSettings.autoSyncMin === 30 ? ' selected' : '') + '>每 30 分钟</option>' +
                     '<option value="60"' + (userSettings.autoSyncMin === 60 ? ' selected' : '') + '>每 1 小时</option>' +
                     '</select></div>';
+            }
+            if (userSettings.syncProvider === 'local') {
+                if (!userSettings.syncUrl) userSettings.syncUrl = 'http://192.168.1.100:8765';
+                html += '<div class="form-group"><label>电脑服务器地址</label>' +
+                    '<input type="text" id="syncUrl" value="' + userSettings.syncUrl + '" onchange="userSettings.syncUrl=this.value;saveData();" placeholder="http://电脑IP:8765" style="width:100%;padding:8px 12px;border:2px solid var(--border);border-radius:10px;background:var(--bg-card);color:var(--text-primary);"></div>' +
+                    '<div style="font-size:11px;color:var(--text-muted);margin:-4px 0 8px;">电脑端运行 python sync_server.py，手机端输入电脑的 IP 地址</div>';
             }
             html += '<div style="display:flex;gap:8px;margin-top:8px;">' +
                 '<button class="btn btn-primary" onclick="syncNow()">🔄 拉取合并</button>' +
@@ -5600,7 +5607,9 @@
         function onAutoSyncChange(val) {
             userSettings.autoSyncMin = parseInt(val) || 0;
             saveData();
-            if (userSettings.autoSyncMin > 0 && userSettings.syncProvider && userSettings.syncToken && userSettings.syncUrl) {
+            var canSync = userSettings.syncProvider && userSettings.syncUrl &&
+                (userSettings.syncProvider === 'local' || userSettings.syncToken);
+            if (userSettings.autoSyncMin > 0 && canSync) {
                 setupAutoSync();
             } else {
                 clearAutoSync();
@@ -5620,15 +5629,17 @@
         }
 
         function autoSync() {
-            if (!userSettings.syncProvider || !userSettings.syncToken || !userSettings.syncUrl) return;
-            pullFromGist(function(remote) {
+            if (!userSettings.syncProvider || !userSettings.syncUrl) return;
+            if (userSettings.syncProvider === 'gist' && !userSettings.syncToken) return;
+            var pullFn = userSettings.syncProvider === 'local' ? pullFromLocal : pullFromGist;
+            pullFn(function(remote) {
                 if (remote) {
                     var changed = mergeRemoteData(remote, true);
                     if (changed) {
                         saveData();
                         renderAll();
                         renderSyncSettings();
-                        showToast('info', '已自动同步云端数据');
+                        showToast('info', '已自动同步');
                     }
                 }
             });
@@ -5670,19 +5681,28 @@
             });
         }
 
-        // Full sync: pull → merge → push
+        // Full sync: pull → merge → push (works for both gist and local)
         function syncNow() {
             var statusEl = document.getElementById('syncStatus');
             if (!statusEl) return;
-            if (!userSettings.syncProvider || !userSettings.syncToken || !userSettings.syncUrl) {
+            if (!userSettings.syncProvider || !userSettings.syncUrl) {
+                statusEl.innerHTML = '<div class="sync-status error">请先配置同步方式</div>';
+                return;
+            }
+            if (userSettings.syncProvider === 'gist' && !userSettings.syncToken) {
                 statusEl.innerHTML = '<div class="sync-status error">请先配置 GitHub Token 和 Gist ID</div>';
                 return;
             }
-            statusEl.innerHTML = '<div class="sync-status info">正在拉取云端数据...</div>';
 
-            pullFromGist(function(remote) {
+            var pullFn = userSettings.syncProvider === 'local' ? pullFromLocal : pullFromGist;
+            var pushFn = userSettings.syncProvider === 'local' ? pushToLocal : pushToGist;
+            var label = userSettings.syncProvider === 'local' ? '本地服务器' : '云端';
+
+            statusEl.innerHTML = '<div class="sync-status info">正在拉取' + label + '数据...</div>';
+
+            pullFn(function(remote) {
                 if (!remote) {
-                    statusEl.innerHTML = '<div class="sync-status error">无法读取云端数据，请检查 Token 和 Gist ID</div>';
+                    statusEl.innerHTML = '<div class="sync-status error">无法读取' + label + '数据，请检查地址和网络</div>';
                     return;
                 }
                 statusEl.innerHTML = '<div class="sync-status info">正在合并数据...</div>';
@@ -5691,15 +5711,15 @@
                 renderAll();
 
                 statusEl.innerHTML = '<div class="sync-status info">正在上传合并结果...</div>';
-                pushToGist(function(success) {
+                pushFn(function(success) {
                     if (success) {
                         userSettings.lastSyncDate = new Date().toISOString();
                         saveData();
                         renderSyncSettings();
                         statusEl.innerHTML = '<div class="sync-status success">✅ 同步成功 — ' + new Date().toLocaleTimeString() + '</div>';
-                        if (changed) showToast('success', '已合并云端数据');
+                        if (changed) showToast('success', '已合并' + label + '数据');
                     } else {
-                        statusEl.innerHTML = '<div class="sync-status error">上传失败，请检查网络和 Token</div>';
+                        statusEl.innerHTML = '<div class="sync-status error">上传失败，请检查网络</div>';
                     }
                 });
             });
@@ -5733,72 +5753,37 @@
             });
         }
 
-        // Merge remote data into local. If silent=true, only merge non-conflicting items.
-        // Returns true if any data changed.
-        function mergeRemoteData(remote, silent) {
-            var changed = false;
-            var now = new Date().toISOString();
-            var lastSync = userSettings.lastSyncDate || '';
+        // Pull data from local server
+        function pullFromLocal(callback) {
+            fetch(userSettings.syncUrl + '/api/data', {
+                method: 'GET',
+                headers: { 'Accept': 'application/json' }
+            }).then(function(res) {
+                if (!res.ok) { callback(null); return; }
+                return res.json();
+            }).then(function(data) {
+                callback(data || null);
+            }).catch(function() {
+                callback(null);
+            });
+        }
 
-            // Ensure remote arrays exist
-            var rTasks = remote.tasks || [];
-            var rProjects = remote.projects || [];
-            var rHabits = remote.habits || [];
-            var rTemplates = remote.templates || [];
-
-            // Merge helper: for each remote item, find local by id
-            function mergeArray(localArr, remoteArr, idKey) {
-                // Index local by id
-                var localIndex = {};
-                for (var i = 0; i < localArr.length; i++) {
-                    localIndex[localArr[i][idKey]] = i;
-                }
-                for (var j = 0; j < remoteArr.length; j++) {
-                    var rItem = remoteArr[j];
-                    var rId = rItem[idKey];
-                    var localIdx = localIndex[rId];
-                    if (localIdx === undefined) {
-                        // Remote-only item → add to local
-                        localArr.push(rItem);
-                        changed = true;
-                    } else {
-                        // Both have it → compare updatedAt
-                        var lItem = localArr[localIdx];
-                        var rTime = rItem.updatedAt || '';
-                        var lTime = lItem.updatedAt || '';
-                        if (rTime > lTime) {
-                            // Remote is newer → use remote (but preserve focusSessions)
-                            if (rItem.focusSessions === undefined && lItem.focusSessions) {
-                                rItem.focusSessions = lItem.focusSessions;
-                            }
-                            localArr[localIdx] = rItem;
-                            changed = true;
-                        }
-                        // else: local is newer or same → keep local
-                    }
-                }
-            }
-
-            mergeArray(tasks, rTasks, 'id');
-            mergeArray(projects, rProjects, 'id');
-            mergeArray(habits, rHabits, 'id');
-            mergeArray(templates, rTemplates, 'id');
-
-            // Merge settings: take the union (later values from remote if not set locally)
-            if (remote.userSettings) {
-                var rs = remote.userSettings;
-                // Don't overwrite sync credentials from remote
-                var protectedKeys = ['syncToken', 'syncUrl', 'syncProvider', 'autoSyncMin'];
-                for (var key in rs) {
-                    if (rs.hasOwnProperty(key) && protectedKeys.indexOf(key) === -1) {
-                        if (userSettings[key] === undefined || userSettings[key] === '' || userSettings[key] === 0) {
-                            if (rs[key]) { userSettings[key] = rs[key]; changed = true; }
-                        }
-                    }
-                }
-            }
-
-            return changed;
+        // Push local data to local server
+        function pushToLocal(callback) {
+            var payload = {
+                tasks: tasks, projects: projects, habits: habits,
+                templates: templates,
+                userSettings: userSettings, lastModified: new Date().toISOString()
+            };
+            fetch(userSettings.syncUrl + '/api/data', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(function(res) {
+                callback(res.ok);
+            }).catch(function() {
+                callback(false);
+            });
         }
 
         // Push local data to Gist (upload only)
@@ -5834,21 +5819,84 @@
         function forcePush() {
             var statusEl = document.getElementById('syncStatus');
             if (!statusEl) return;
-            if (!userSettings.syncProvider || !userSettings.syncToken || !userSettings.syncUrl) {
+            if (!userSettings.syncProvider || !userSettings.syncUrl) {
+                statusEl.innerHTML = '<div class="sync-status error">请先配置同步方式</div>';
+                return;
+            }
+            if (userSettings.syncProvider === 'gist' && !userSettings.syncToken) {
                 statusEl.innerHTML = '<div class="sync-status error">请先配置 GitHub Token 和 Gist ID</div>';
                 return;
             }
+
+            var pushFn = userSettings.syncProvider === 'local' ? pushToLocal : pushToGist;
+            var label = userSettings.syncProvider === 'local' ? '本地服务器' : '云端';
+
             statusEl.innerHTML = '<div class="sync-status info">正在上传...</div>';
-            pushToGist(function(success) {
+            pushFn(function(success) {
                 if (success) {
                     userSettings.lastSyncDate = new Date().toISOString();
                     saveData();
                     renderSyncSettings();
                     statusEl.innerHTML = '<div class="sync-status success">✅ 上传成功 — ' + new Date().toLocaleTimeString() + '</div>';
                 } else {
-                    statusEl.innerHTML = '<div class="sync-status error">上传失败，请检查网络和 Token</div>';
+                    statusEl.innerHTML = '<div class="sync-status error">上传失败，请检查网络和地址</div>';
                 }
             });
+        }
+
+        // Merge remote data into local. Returns true if any data changed.
+        function mergeRemoteData(remote, silent) {
+            var changed = false;
+            var rTasks = remote.tasks || [];
+            var rProjects = remote.projects || [];
+            var rHabits = remote.habits || [];
+            var rTemplates = remote.templates || [];
+
+            function mergeArray(localArr, remoteArr, idKey) {
+                var localIndex = {};
+                for (var i = 0; i < localArr.length; i++) {
+                    localIndex[localArr[i][idKey]] = i;
+                }
+                for (var j = 0; j < remoteArr.length; j++) {
+                    var rItem = remoteArr[j];
+                    var rId = rItem[idKey];
+                    var localIdx = localIndex[rId];
+                    if (localIdx === undefined) {
+                        localArr.push(rItem);
+                        changed = true;
+                    } else {
+                        var lItem = localArr[localIdx];
+                        var rTime = rItem.updatedAt || '';
+                        var lTime = lItem.updatedAt || '';
+                        if (rTime > lTime) {
+                            if (rItem.focusSessions === undefined && lItem.focusSessions) {
+                                rItem.focusSessions = lItem.focusSessions;
+                            }
+                            localArr[localIdx] = rItem;
+                            changed = true;
+                        }
+                    }
+                }
+            }
+
+            mergeArray(tasks, rTasks, 'id');
+            mergeArray(projects, rProjects, 'id');
+            mergeArray(habits, rHabits, 'id');
+            mergeArray(templates, rTemplates, 'id');
+
+            if (remote.userSettings) {
+                var rs = remote.userSettings;
+                var protectedKeys = ['syncToken', 'syncUrl', 'syncProvider', 'autoSyncMin'];
+                for (var key in rs) {
+                    if (rs.hasOwnProperty(key) && protectedKeys.indexOf(key) === -1) {
+                        if (userSettings[key] === undefined || userSettings[key] === '' || userSettings[key] === 0) {
+                            if (rs[key]) { userSettings[key] = rs[key]; changed = true; }
+                        }
+                    }
+                }
+            }
+
+            return changed;
         }
 
         function renderPreferencesSettings() {
@@ -5919,7 +5967,9 @@
         // Schedule reminders every hour
         setInterval(scheduleReminder, 3600000);
         // Auto-sync on startup (with delay to not block UI)
-        if (userSettings.syncProvider && userSettings.syncToken && userSettings.syncUrl) {
+        var canAutoSync = userSettings.syncProvider && userSettings.syncUrl &&
+            (userSettings.syncProvider === 'local' || userSettings.syncToken);
+        if (canAutoSync) {
             setupAutoSync();
             setTimeout(function() { autoSync(); }, 3000);
         }
