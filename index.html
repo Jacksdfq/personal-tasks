@@ -5584,7 +5584,18 @@
                 if (!userSettings.syncUrl) userSettings.syncUrl = 'http://192.168.1.100:8765';
                 html += '<div class="form-group"><label>电脑服务器地址</label>' +
                     '<input type="text" id="syncUrl" value="' + userSettings.syncUrl + '" onchange="userSettings.syncUrl=this.value;saveData();" placeholder="http://电脑IP:8765" style="width:100%;padding:8px 12px;border:2px solid var(--border);border-radius:10px;background:var(--bg-card);color:var(--text-primary);"></div>' +
-                    '<div style="font-size:11px;color:var(--text-muted);margin:-4px 0 8px;">电脑端运行 python sync_server.py，手机端输入电脑的 IP 地址</div>';
+                    '<div style="background:var(--bg-secondary);border-radius:10px;padding:12px;margin:8px 0;font-size:12px;line-height:1.8;color:var(--text-secondary);">' +
+                    '<div style="font-weight:600;color:var(--accent);margin-bottom:6px;">📖 使用说明</div>' +
+                    '<div><b>电脑端：</b></div>' +
+                    '<div>1. 打开终端，进入项目目录</div>' +
+                    '<div>2. 运行 <code style="background:var(--bg-card);padding:2px 6px;border-radius:4px;">python sync_server.py</code></div>' +
+                    '<div>3. 记下显示的 IP 地址（如 192.168.1.5）</div>' +
+                    '<div style="margin-top:6px;"><b>手机端：</b></div>' +
+                    '<div>1. 确保手机和电脑连接<b>同一 WiFi</b></div>' +
+                    '<div>2. 上方填入电脑 IP 地址（默认端口 8765）</div>' +
+                    '<div>3. 点"拉取合并"开始同步</div>' +
+                    '<div style="margin-top:6px;color:var(--text-muted);font-size:11px;">💡 手机浏览器也可以直接访问电脑 IP 来打开应用</div>' +
+                    '</div>';
             }
             html += '<div style="display:flex;gap:8px;margin-top:8px;">' +
                 '<button class="btn btn-primary" onclick="syncNow()">🔄 拉取合并</button>' +
