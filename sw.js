@@ -1,4 +1,4 @@
-var CACHE_NAME = 'personal-tasks-v4';
+var CACHE_NAME = 'personal-tasks-v5';
 var BASE = self.location.pathname.replace(/\/[^/]*$/, '');
 
 self.addEventListener('install', function(event) {
@@ -24,14 +24,13 @@ self.addEventListener('activate', function(event) {
 self.addEventListener('fetch', function(event) {
   if (!event.request.url.startsWith(self.location.origin)) return;
   event.respondWith(
-    caches.match(event.request).then(function(response) {
-      if (response) return response;
-      return fetch(event.request).then(function(response) {
-        if (!response || response.status !== 200 || response.type !== 'basic') return response;
-        var toCache = response.clone();
-        caches.open(CACHE_NAME).then(function(cache) { cache.put(event.request, toCache); });
-        return response;
-      });
+    fetch(event.request).then(function(response) {
+      if (!response || response.status !== 200 || response.type !== 'basic') return response;
+      var toCache = response.clone();
+      caches.open(CACHE_NAME).then(function(cache) { cache.put(event.request, toCache); });
+      return response;
+    }).catch(function() {
+      return caches.match(event.request);
     })
   );
 });
