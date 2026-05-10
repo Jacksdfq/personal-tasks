@@ -2836,10 +2836,8 @@
         function isCompletedBeforeToday(t) {
             if (!t.completed || !t.completedAt) return false;
             var now = new Date();
-            var completedDate = new Date(t.completedAt);
-            return completedDate.getFullYear() !== now.getFullYear() ||
-                   completedDate.getMonth() !== now.getMonth() ||
-                   completedDate.getDate() !== now.getDate();
+            var todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            return new Date(t.completedAt) < todayStart;
         }
 
         function calcHabitStreak(records) {
@@ -3346,8 +3344,7 @@
             if (currentFilter === 'active') {
                 filtered = filtered.filter(function(t) { return !t.completed; });
             } else if (currentFilter === 'completed') {
-                var today = new Date().toISOString().slice(0, 10);
-                filtered = filtered.filter(function(t) { return t.completed && t.completedAt && t.completedAt.slice(0, 10) === today; });
+                filtered = filtered.filter(function(t) { return t.completed && !isCompletedBeforeToday(t); });
             } else {
                 // "all" filter: hide tasks completed before today
                 filtered = filtered.filter(function(t) { return !isCompletedBeforeToday(t); });
