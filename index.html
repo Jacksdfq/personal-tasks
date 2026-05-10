@@ -124,6 +124,64 @@
             --glow-md: 0 0 36px rgba(124,58,237,0.18);
         }
 
+        /* ============ WARM THEME: LIGHT ============ */
+        [data-style="warm"] {
+            --bg-primary: #faf7f2;
+            --bg-secondary: #f3efe7;
+            --bg-card: #fffdf9;
+            --bg-card-solid: #fffdf9;
+            --bg-hover: rgba(199,81,46,0.05);
+            --text-primary: #3d3228;
+            --text-secondary: #7a6b5d;
+            --text-muted: #b0a395;
+            --accent: #c7512e;
+            --accent-hover: #a84322;
+            --accent-shadow: rgba(199,81,46,0.2);
+            --border: #e5ddd2;
+            --border-glow: #d4c8b6;
+            --q1-bg: rgba(220,80,60,0.07);
+            --q2-bg: rgba(80,160,120,0.07);
+            --q3-bg: rgba(160,150,140,0.05);
+            --q4-bg: rgba(200,160,60,0.07);
+            --success: #5a9e6f;
+            --warning: #c8842e;
+            --danger: #c7512e;
+            --scrollbar: #d4c8b6;
+            --card-backdrop: none;
+            --card-border: 1px solid #e5ddd2;
+            --glow-sm: 0 2px 8px rgba(61,50,40,0.06);
+            --glow-md: 0 4px 16px rgba(61,50,40,0.1);
+        }
+
+        /* ============ WARM THEME: DARK ============ */
+        [data-style="warm"][data-theme="dark"] {
+            --bg-primary: #1e1b18;
+            --bg-secondary: #25211d;
+            --bg-card: #2c2722;
+            --bg-card-solid: #2c2722;
+            --bg-hover: rgba(199,81,46,0.12);
+            --text-primary: #e8ddd0;
+            --text-secondary: #b0a395;
+            --text-muted: #6b6055;
+            --accent: #d4784a;
+            --accent-hover: #e8956a;
+            --accent-shadow: rgba(212,120,74,0.25);
+            --border: #3d3530;
+            --border-glow: #5a4d40;
+            --q1-bg: rgba(220,80,60,0.1);
+            --q2-bg: rgba(80,160,120,0.1);
+            --q3-bg: rgba(120,110,100,0.06);
+            --q4-bg: rgba(200,160,60,0.1);
+            --success: #6bae7e;
+            --warning: #d4943e;
+            --danger: #d4784a;
+            --scrollbar: #3d3530;
+            --card-backdrop: none;
+            --card-border: 1px solid #3d3530;
+            --glow-sm: 0 2px 8px rgba(0,0,0,0.2);
+            --glow-md: 0 4px 16px rgba(0,0,0,0.3);
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
@@ -2384,6 +2442,108 @@
         }
 
         [data-style="future"] .quadrant-label {
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+
+        /* ============ WARM STYLE: COMPONENTS ============ */
+        [data-style="warm"] body {
+            font-family: "PingFang SC", "Microsoft YaHei", "Noto Serif SC", Georgia, serif;
+            background-image:
+                radial-gradient(ellipse at 50% 0%, rgba(199,81,46,0.03) 0%, transparent 60%);
+        }
+
+        [data-style="warm"][data-theme="dark"] body {
+            background-image:
+                radial-gradient(ellipse at 50% 0%, rgba(212,120,74,0.05) 0%, transparent 60%),
+                repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,0.006) 3px, rgba(255,255,255,0.006) 4px);
+        }
+
+        [data-style="warm"] .tab-nav {
+            border-radius: 12px;
+            box-shadow: var(--glow-sm);
+        }
+
+        [data-style="warm"] .tab-btn {
+            border-radius: 10px;
+            font-weight: 500;
+        }
+
+        [data-style="warm"] .tab-btn.active {
+            box-shadow: 0 2px 8px var(--accent-shadow);
+        }
+
+        [data-style="warm"] .matrix-card,
+        [data-style="warm"] .sidebar-card,
+        [data-style="warm"] .stats-card {
+            border: var(--card-border);
+            box-shadow: var(--glow-sm);
+            border-radius: 14px;
+        }
+
+        [data-style="warm"] .stat-card {
+            border: var(--card-border);
+            border-radius: 12px;
+            box-shadow: var(--glow-sm);
+        }
+
+        [data-style="warm"] .btn-primary {
+            border-radius: 10px;
+            box-shadow: 0 2px 8px var(--accent-shadow);
+            font-weight: 600;
+        }
+
+        [data-style="warm"] .btn-ghost {
+            border-radius: 10px;
+            border-color: var(--border);
+        }
+
+        [data-style="warm"] input[type="text"],
+        [data-style="warm"] input[type="search"],
+        [data-style="warm"] input[type="number"],
+        [data-style="warm"] input[type="date"],
+        [data-style="warm"] input[type="password"],
+        [data-style="warm"] select,
+        [data-style="warm"] textarea {
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        [data-style="warm"] input:focus,
+        [data-style="warm"] select:focus,
+        [data-style="warm"] textarea:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-shadow);
+            outline: none;
+        }
+
+        [data-style="warm"] .modal-content {
+            border: var(--card-border);
+            box-shadow: var(--glow-md);
+            border-radius: 16px;
+        }
+
+        [data-style="warm"] .section-title {
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        [data-style="warm"] .task-dot {
+            box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+        }
+
+        [data-style="warm"] .quadrant-label {
+            font-weight: 600;
+            letter-spacing: 0.2px;
+        }
+
+        [data-style="warm"] .crosshair-h,
+        [data-style="warm"] .crosshair-v {
+            background: var(--border);
+            opacity: 0.5;
+        }
+
+        [data-style="warm"] .axis-label {
             font-weight: 700;
             letter-spacing: 0.3px;
         }
@@ -6523,13 +6683,18 @@
             localStorage.setItem('theme', next);
         }
 
+        var _styleCycle = ['', 'future', 'warm'];
+        var _styleIcons = ['📋', '✨', '🍂'];
+        var _styleNames = ['经典风格', '未来风格', '温暖风格'];
         function toggleStyle() {
             var html = document.documentElement;
-            var isFuture = html.getAttribute('data-style') === 'future';
-            var next = isFuture ? '' : 'future';
+            var cur = html.getAttribute('data-style') || '';
+            var idx = _styleCycle.indexOf(cur);
+            var nextIdx = (idx + 1) % _styleCycle.length;
+            var next = _styleCycle[nextIdx];
             html.setAttribute('data-style', next);
-            document.getElementById('styleToggleBtn').textContent = isFuture ? '⚡' : '✨';
-            document.getElementById('styleToggleBtn').title = isFuture ? '切换到未来风格' : '切换到经典风格';
+            document.getElementById('styleToggleBtn').textContent = _styleIcons[nextIdx];
+            document.getElementById('styleToggleBtn').title = '切换到' + _styleNames[(nextIdx + 1) % _styleCycle.length];
             localStorage.setItem('appStyle', next);
         }
 
@@ -6540,10 +6705,11 @@
                 document.getElementById('themeToggleBtn').textContent = '☀️';
             }
             var savedStyle = localStorage.getItem('appStyle');
-            if (savedStyle === 'future') {
-                document.documentElement.setAttribute('data-style', 'future');
-                document.getElementById('styleToggleBtn').textContent = '✨';
-                document.getElementById('styleToggleBtn').title = '切换到经典风格';
+            if (savedStyle === 'future' || savedStyle === 'warm') {
+                document.documentElement.setAttribute('data-style', savedStyle);
+                var sidx = _styleCycle.indexOf(savedStyle);
+                document.getElementById('styleToggleBtn').textContent = _styleIcons[sidx];
+                document.getElementById('styleToggleBtn').title = '切换到' + _styleNames[(sidx + 1) % _styleCycle.length];
             }
         })();
 
