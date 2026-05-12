@@ -88,10 +88,10 @@
             --q2-label-color: #6fd49a; --q2-label-bg: rgba(16,185,129,0.12); --q2-text: #6fd49a;
             --q3-label-color: #a0a8b8; --q3-label-bg: rgba(148,163,184,0.08); --q3-text: #a0a8b8;
             --q4-label-color: #e8b84a; --q4-label-bg: rgba(245,158,11,0.12); --q4-text: #e8b84a;
-            --cat-work-color: #e74c3c; --cat-work-bg: #ffe0e0;
-            --cat-life-color: #9b59b6; --cat-life-bg: #f0e0ff;
-            --cat-study-color: #3498db; --cat-study-bg: #e0f0ff;
-            --cat-other-color: #95a5a6; --cat-other-bg: #f0f0f0;
+            --cat-work-color: #e06050; --cat-work-bg: #ffe8e0;
+            --cat-life-color: #a060c0; --cat-life-bg: #f4e0ff;
+            --cat-study-color: #4098d8; --cat-study-bg: #e0f0ff;
+            --cat-other-color: #889098; --cat-other-bg: #f0f2f4;
         }
 
         /* ============ FUTURE THEME: LIGHT ============ */
@@ -217,10 +217,10 @@
             --q2-label-color: #1d7a4d; --q2-label-bg: rgba(230,255,240,0.5); --q2-text: #1d7a4d;
             --q3-label-color: #666; --q3-label-bg: rgba(240,240,240,0.5); --q3-text: #666;
             --q4-label-color: #b3750f; --q4-label-bg: rgba(255,248,220,0.5); --q4-text: #b3750f;
-            --cat-work-color: #e74c3c; --cat-work-bg: #ffe0e0;
-            --cat-life-color: #9b59b6; --cat-life-bg: #f0e0ff;
-            --cat-study-color: #3498db; --cat-study-bg: #e0f0ff;
-            --cat-other-color: #95a5a6; --cat-other-bg: #f0f0f0;
+            --cat-work-color: #c7512e; --cat-work-bg: #fce8e0;
+            --cat-life-color: #8b6b4a; --cat-life-bg: #efe0d0;
+            --cat-study-color: #5b8c85; --cat-study-bg: #e0f0ec;
+            --cat-other-color: #a09080; --cat-other-bg: #f0ebe6;
         }
 
         /* ============ WARM THEME: DARK ============ */
@@ -260,10 +260,10 @@
             --q2-label-color: #6fd49a; --q2-label-bg: rgba(16,185,129,0.12); --q2-text: #6fd49a;
             --q3-label-color: #a0a8b8; --q3-label-bg: rgba(148,163,184,0.08); --q3-text: #a0a8b8;
             --q4-label-color: #e8b84a; --q4-label-bg: rgba(245,158,11,0.12); --q4-text: #e8b84a;
-            --cat-work-color: #e74c3c; --cat-work-bg: #ffe0e0;
-            --cat-life-color: #9b59b6; --cat-life-bg: #f0e0ff;
-            --cat-study-color: #3498db; --cat-study-bg: #e0f0ff;
-            --cat-other-color: #95a5a6; --cat-other-bg: #f0f0f0;
+            --cat-work-color: #e28a68; --cat-work-bg: rgba(224,136,88,0.2);
+            --cat-life-color: #b89870; --cat-life-bg: rgba(184,152,112,0.2);
+            --cat-study-color: #7ec8a0; --cat-study-bg: rgba(126,200,160,0.18);
+            --cat-other-color: #b0a598; --cat-other-bg: rgba(176,165,152,0.15);
         }
 
         /* ============ PRIMITIVE TOKENS (global, not themed) ============ */
@@ -285,6 +285,21 @@
             min-height: 100vh;
             padding: 20px;
             transition: background 0.3s, color 0.3s;
+        }
+
+        /* Focus visible ring */
+        :focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+        button:focus-visible, .btn:focus-visible, .tab-btn:focus-visible,
+        .category-chip:focus-visible, .fab:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+        input:focus-visible, textarea:focus-visible, select:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 2px var(--accent);
         }
 
         /* Tab Navigation */
@@ -636,7 +651,7 @@
             color: var(--text-on-primary);
             cursor: grab;
             transform: translate(-50%, -50%);
-            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
             box-shadow: 0 2px 8px rgba(0,0,0,0.15);
             z-index: 10;
             border: 2px solid rgba(255,255,255,0.6);
@@ -1423,7 +1438,7 @@
         .pd-row { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
         .pd-label { font-size: 10px; color: var(--text-muted); min-width: 28px; text-align: right; }
         .pd-track { flex: 1; height: 8px; border-radius: 4px; background: var(--bg-secondary); }
-        .pd-fill { height: 8px; border-radius: 4px; transition: width 0.4s; }
+        .pd-fill { height: 8px; border-radius: 4px; width: 100%; transform-origin: left center; transition: transform 0.4s; }
         .pd-count { font-size: 10px; color: var(--text-secondary); min-width: 18px; text-align: right; }
 
         /* Stats Section */
@@ -2120,7 +2135,7 @@
         .project-bar-name { width: 80px; flex-shrink: 0; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .project-bar-count { font-size: 11px; color: var(--text-secondary); min-width: 48px; text-align: center; }
         .project-bar-track { flex: 1; height: 6px; border-radius: 3px; background: var(--bg-secondary); min-width: 40px; }
-        .project-bar-fill { height: 6px; border-radius: 3px; transition: width 0.4s; }
+        .project-bar-fill { height: 6px; border-radius: 3px; width: 100%; transform-origin: left center; transition: transform 0.4s; }
         .project-bar-pct { font-size: 11px; color: var(--text-secondary); min-width: 35px; text-align: right; font-weight: 500; }
 
         /* Efficiency mini cards */
@@ -2821,6 +2836,14 @@
         [data-theme="dark"] .completed-card-header .count {
             background: var(--success);
             color: var(--text-on-primary);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
         }
     </style>
 </head>
@@ -5801,7 +5824,7 @@
                     // Mini progress bar for weekly completion
                     '<div style="padding:0 0 6px;display:flex;align-items:center;gap:6px;font-size:10px;color:var(--text-muted);">' +
                     '<div style="flex:1;height:4px;background:var(--bg-secondary);border-radius:2px;overflow:hidden;">' +
-                    '<div style="height:100%;width:' + weekRate + '%;background:' + (h.color || '#4f6ef7') + ';border-radius:2px;transition:width 0.3s;"></div></div>' +
+                    '<div style="height:100%;width:100%;transform:scaleX(' + (weekRate / 100) + ');transform-origin:left center;background:' + (h.color || '#4f6ef7') + ';border-radius:2px;transition:transform 0.3s;"></div></div>' +
                     '<span>累计 ' + totalDays + ' ' + freqLabel + '</span></div>' +
                     '<div class="habit-grid" id="habitGrid-' + h.id + '"></div></div>';
             }
@@ -6237,7 +6260,7 @@
                     var pct = Math.round(dist[i] / maxVal * 100);
                     h += '<div class="pd-row">' +
                         '<span class="pd-label" style="font-weight:' + (i >= 7 ? '700' : '400') + ';">' + (i + 1) + '</span>' +
-                        '<div class="pd-track"><div class="pd-fill" style="width:' + pct + '%;background:' + color + ';"></div></div>' +
+                        '<div class="pd-track"><div class="pd-fill" style="transform:scaleX(' + (pct / 100) + ');background:' + color + ';"></div></div>' +
                         '<span class="pd-count">' + dist[i] + '</span>' +
                         '</div>';
                 }
@@ -6351,7 +6374,7 @@
                 html += '<div class="project-bar-row">' +
                     '<span class="project-bar-name" title="' + p.name + '">' + (p.color ? '<span style="color:' + p.color + ';">●</span> ' : '') + p.name + '</span>' +
                     '<span class="project-bar-count">' + doneCount + '/' + total + '</span>' +
-                    '<div class="project-bar-track"><div class="project-bar-fill" style="width:' + rate + '%;background:' + (p.color || '#4f6ef7') + ';"></div></div>' +
+                    '<div class="project-bar-track"><div class="project-bar-fill" style="transform:scaleX(' + (rate / 100) + ');background:' + (p.color || '#4f6ef7') + ';"></div></div>' +
                     '<span class="project-bar-pct">' + rate + '%</span>' +
                     '</div>';
             }
@@ -6363,7 +6386,7 @@
                 html += '<div class="project-bar-row">' +
                     '<span class="project-bar-name">未分类</span>' +
                     '<span class="project-bar-count">' + noProjDone + '/' + noProjTotal + '</span>' +
-                    '<div class="project-bar-track"><div class="project-bar-fill" style="width:' + rate + '%;background:#95a5a6;"></div></div>' +
+                    '<div class="project-bar-track"><div class="project-bar-fill" style="transform:scaleX(' + (rate / 100) + ');background:#95a5a6;"></div></div>' +
                     '<span class="project-bar-pct">' + rate + '%</span>' +
                     '</div>';
             }
@@ -7320,9 +7343,9 @@
             localStorage.setItem('theme', next);
         }
 
-        var _styleCycle = ['', 'future', 'warm'];
-        var _styleIcons = ['📋', '✨', '🍂'];
-        var _styleNames = ['经典风格', '未来风格', '温暖风格'];
+        var _styleCycle = ['warm', '', 'future'];
+        var _styleIcons = ['🍂', '📋', '✨'];
+        var _styleNames = ['温暖风格', '经典风格', '未来风格'];
         function toggleStyle() {
             var html = document.documentElement;
             var cur = html.getAttribute('data-style') || '';
@@ -7342,9 +7365,10 @@
                 document.getElementById('themeToggleBtn').textContent = '☀️';
             }
             var savedStyle = localStorage.getItem('appStyle');
-            if (savedStyle === 'future' || savedStyle === 'warm') {
-                document.documentElement.setAttribute('data-style', savedStyle);
-                var sidx = _styleCycle.indexOf(savedStyle);
+            if (savedStyle === 'future' || savedStyle === 'warm' || savedStyle === '') {
+                var style = savedStyle || 'warm';
+                document.documentElement.setAttribute('data-style', style);
+                var sidx = _styleCycle.indexOf(style);
                 document.getElementById('styleToggleBtn').textContent = _styleIcons[sidx];
                 document.getElementById('styleToggleBtn').title = '切换到' + _styleNames[(sidx + 1) % _styleCycle.length];
             }
