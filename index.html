@@ -283,7 +283,7 @@
             background: var(--bg-primary);
             color: var(--text-primary);
             min-height: 100vh;
-            padding: 20px;
+            padding: var(--space-5);
             transition: background 0.3s, color 0.3s;
         }
 
@@ -478,7 +478,7 @@
             max-width: 1400px;
             margin: 0 auto 20px;
             display: flex;
-            gap: 16px;
+            gap: var(--space-4);
             flex-wrap: wrap;
         }
 
@@ -527,7 +527,7 @@
             margin: 0 auto;
             display: grid;
             grid-template-columns: 1fr 360px;
-            gap: 20px;
+            gap: var(--space-5);
             align-items: start;
         }
 
@@ -538,7 +538,7 @@
         .matrix-card, .sidebar-card, .stats-card {
             background: var(--bg-card);
             border-radius: 16px;
-            padding: 16px;
+            padding: var(--space-4);
             box-shadow: 0 2px 16px rgba(0,0,0,0.06);
             transition: background 0.3s;
         }
@@ -667,7 +667,7 @@
         .task-dot.collection {
             border: 3px dashed rgba(255,255,255,0.8);
             font-size: 10px !important;
-            background: #7c6ff7 !important;
+            background: var(--accent);
             cursor: pointer;
         }
 
@@ -682,7 +682,7 @@
             position: fixed;
             background: var(--bg-card);
             border-radius: 16px;
-            padding: 20px;
+            padding: var(--space-5);
             box-shadow: 0 8px 40px rgba(0,0,0,0.2);
             z-index: 300;
             max-width: 340px;
@@ -993,10 +993,10 @@
             border-color: currentColor;
         }
 
-        .category-chip[data-cat="work"] { color: #e74c3c; }
-        .category-chip[data-cat="life"] { color: #9b59b6; }
-        .category-chip[data-cat="study"] { color: #3498db; }
-        .category-chip[data-cat="other"] { color: #95a5a6; }
+        .category-chip[data-cat="work"] { color: var(--cat-work-color); }
+        .category-chip[data-cat="life"] { color: var(--cat-life-color); }
+        .category-chip[data-cat="study"] { color: var(--cat-study-color); }
+        .category-chip[data-cat="other"] { color: var(--cat-other-color); }
 
         .task-list {
             padding: 6px;
@@ -1236,7 +1236,7 @@
         .completed-card {
             background: var(--bg-card);
             border-radius: 16px;
-            padding: 16px;
+            padding: var(--space-4);
             box-shadow: 0 2px 16px rgba(0,0,0,0.06);
         }
 
@@ -1362,7 +1362,7 @@
             background: var(--bg-card);
             border-radius: var(--radius-lg);
             box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            padding: 12px;
+            padding: var(--space-3);
             margin-top: 4px;
             width: 260px;
         }
@@ -1463,7 +1463,7 @@
             z-index: 100;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: var(--space-5);
         }
 
         .modal-overlay.show { display: flex; }
@@ -1636,16 +1636,16 @@
         .category-option:hover { border-color: var(--border); }
         .category-option.active { border-color: currentColor; }
 
-        .category-option[data-cat="work"] { color: #e74c3c; }
-        .category-option[data-cat="life"] { color: #9b59b6; }
-        .category-option[data-cat="study"] { color: #3498db; }
-        .category-option[data-cat="other"] { color: #95a5a6; }
+        .category-option[data-cat="work"] { color: var(--cat-work-color); }
+        .category-option[data-cat="life"] { color: var(--cat-life-color); }
+        .category-option[data-cat="study"] { color: var(--cat-study-color); }
+        .category-option[data-cat="other"] { color: var(--cat-other-color); }
 
         .tags-input {
             display: flex;
             flex-wrap: wrap;
             gap: 6px;
-            padding: 8px;
+            padding: var(--space-2);
             border: 2px solid var(--border);
             border-radius: var(--radius-md);
             min-height: 44px;
@@ -1692,7 +1692,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 8px;
+            padding: var(--space-2);
             background: var(--bg-secondary);
             border-radius: var(--radius-sm);
             margin-bottom: 6px;
@@ -1731,7 +1731,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 8px;
+            padding: var(--space-2);
             color: var(--text-secondary);
             font-size: 13px;
             cursor: pointer;
@@ -1971,7 +1971,7 @@
         .habit-card {
             background: var(--bg-secondary);
             border-radius: var(--radius-lg);
-            padding: 16px;
+            padding: var(--space-4);
             margin-bottom: 12px;
             transition: background var(--duration-fast), color var(--duration-fast), border-color var(--duration-fast), box-shadow var(--duration-fast), transform var(--duration-fast);
         }
@@ -2419,7 +2419,7 @@
         @media (max-width: 500px) {
             *, *::before, *::after { box-sizing: border-box; }
 
-            body { padding: 8px; overflow-x: hidden; }
+            body { padding: var(--space-2); overflow-x: hidden; }
             .app-header { flex-direction: column; align-items: stretch; gap: 6px; }
             .app-header h1 { font-size: 18px; text-align: left; color: var(--text-primary); }
             .app-header h1 span { display: inline; font-size: 20px; }
@@ -2459,10 +2459,9 @@
             .efficiency-grid { grid-template-columns: 1fr 1fr; }
             .btn { padding: 6px 10px; font-size: var(--text-xs); }
 
-            .modal-content { width: calc(100% - 16px); max-width: none; margin: 10px auto; padding: 14px; border-radius: var(--radius-lg); max-height: 95vh; }
-            .modal-body { max-height: 55vh; }
+            .modal { width: calc(100% - 16px); max-width: none; margin: 10px auto; padding: 14px; border-radius: var(--radius-lg); max-height: 95vh; }
             .form-group label { font-size: var(--text-sm); }
-            .form-group input, .form-group select, .form-group textarea { font-size: 14px; padding: 8px; max-width: 100%; box-sizing: border-box; }
+            .form-group input, .form-group select, .form-group textarea { font-size: 14px; padding: var(--space-2); max-width: 100%; box-sizing: border-box; }
 
             .task-list .task-item { padding: 7px 8px; }
             .task-list .task-name { font-size: var(--text-sm); max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
@@ -2481,9 +2480,8 @@
             .export-menu { right: 0; left: auto; min-width: 140px; }
             .export-menu button { font-size: var(--text-xs); padding: 7px 10px; }
 
-            #calendarView { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-            #calendarView table { font-size: 9px; width: 100%; }
-            #calendarView th, #calendarView td { padding: 3px 1px; }
+            #calendarView { overflow-x: auto; -webkit-overflow-scrolling: touch; font-size: 9px; }
+            .calendar-grid { font-size: 9px; }
 
             .habit-grid { gap: 2px; }
             .habit-day { width: 20px; height: 20px; }
@@ -2638,7 +2636,7 @@
             box-shadow: 0 0 20px var(--accent-shadow);
         }
 
-        [data-style="future"] .modal-content {
+        [data-style="future"] .modal {
             background: var(--bg-card);
             backdrop-filter: var(--card-backdrop);
             -webkit-backdrop-filter: var(--card-backdrop);
@@ -2790,7 +2788,7 @@
             outline: none;
         }
 
-        [data-style="warm"] .modal-content {
+        [data-style="warm"] .modal {
             border: var(--card-border);
             box-shadow: var(--glow-md);
             border-radius: 16px;
@@ -3431,8 +3429,13 @@
 
         function getDotColor(category, completed) {
             if (completed) return '#95a5a6';
-            var colors = { work: '#e74c3c', life: '#9b59b6', study: '#3498db', other: '#95a5a6' };
-            return colors[category] || '#95a5a6';
+            var vars = { work: 'var(--cat-work-color)', life: 'var(--cat-life-color)', study: 'var(--cat-study-color)', other: 'var(--cat-other-color)' };
+            return vars[category] || 'var(--cat-other-color)';
+        }
+
+        function getDotColorHex(category) {
+            var name = { work: '--cat-work-color', life: '--cat-life-color', study: '--cat-study-color', other: '--cat-other-color' }[category] || '--cat-other-color';
+            return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#95a5a6';
         }
 
         function getCategoryName(catId) {
@@ -5419,7 +5422,7 @@
             if (dot) {
                 dot.style.left = (relX * 100) + '%';
                 dot.style.top = (relY * 100) + '%';
-                dot.style.background = getDotColor(dragState.task.category, false);
+                dot.style.background = getDotColorHex(dragState.task.category);
                 // Update tooltip in real-time
                 var tip = dot.querySelector('.task-dot-tooltip');
                 if (tip) {
@@ -5538,7 +5541,7 @@
                 }
             }
 
-            var catColors = { work: '#e74c3c', life: '#9b59b6', study: '#3498db', other: '#95a5a6' };
+            var catColors = { work: 'var(--cat-work-color)', life: 'var(--cat-life-color)', study: 'var(--cat-study-color)', other: 'var(--cat-other-color)' };
 
             // Pad from previous month
             var prevLast = new Date(calendarYear, calendarMonth, 0).getDate();
@@ -5569,7 +5572,7 @@
                 var previewMax = 4;
                 for (var t = 0; t < Math.min(dayTasks.length, previewMax); t++) {
                     var task = dayTasks[t];
-                    var tColor = catColors[task.category] || '#95a5a6';
+                    var tColor = catColors[task.category] || 'var(--cat-other-color)';
                     var tName = task.name.length > 6 ? task.name.slice(0, 6) + '…' : task.name;
                     html += '<div class="cal-task-line' + (task.completed ? ' done' : '') + '" style="border-left-color:' + tColor + '">' + tName + '</div>';
                 }
