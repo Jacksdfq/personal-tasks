@@ -5827,7 +5827,7 @@
                     // Mini progress bar for weekly completion
                     '<div style="padding:0 0 6px;display:flex;align-items:center;gap:6px;font-size:10px;color:var(--text-muted);">' +
                     '<div style="flex:1;height:4px;background:var(--bg-secondary);border-radius:2px;overflow:hidden;">' +
-                    '<div style="height:100%;width:100%;transform:scaleX(' + (weekRate / 100) + ');transform-origin:left center;background:' + (h.color || '#4f6ef7') + ';border-radius:2px;transition:transform 0.3s;"></div></div>' +
+                    '<div style="height:100%;width:100%;transform:scaleX(' + (weekRate / 100) + ');transform-origin:left center;background:' + (h.color || cssVar('--accent')) + ';border-radius:2px;transition:transform 0.3s;"></div></div>' +
                     '<span>累计 ' + totalDays + ' ' + freqLabel + '</span></div>' +
                     '<div class="habit-grid" id="habitGrid-' + h.id + '"></div></div>';
             }
@@ -5883,7 +5883,7 @@
                 document.getElementById('editHabitId').value = h.id;
                 document.getElementById('habitNameInput').value = h.name;
                 document.getElementById('habitIconInput').value = h.icon || '✅';
-                document.getElementById('habitColorInput').value = h.color || '#4f6ef7';
+                document.getElementById('habitColorInput').value = h.color || cssVar('--accent');
                 document.getElementById('habitTargetInput').value = h.targetCount || 1;
                 selectHabitFrequency(h.frequency || 'daily');
             } else {
@@ -5891,7 +5891,7 @@
                 document.getElementById('editHabitId').value = '';
                 document.getElementById('habitNameInput').value = '';
                 document.getElementById('habitIconInput').value = '✅';
-                document.getElementById('habitColorInput').value = '#4f6ef7';
+                document.getElementById('habitColorInput').value = cssVar('--accent');
                 document.getElementById('habitTargetInput').value = 1;
                 selectHabitFrequency('daily');
             }
@@ -6048,7 +6048,7 @@
                     var done = !!records[ds];
                     var isToday = ds === todayStr;
                     var isFuture = ds > todayStr;
-                    html += '<div style="width:16px;height:16px;border-radius:3px;background:' + (done ? (h.color || '#4f6ef7') : 'var(--bg-secondary)') +
+                    html += '<div style="width:16px;height:16px;border-radius:3px;background:' + (done ? (h.color || cssVar('--accent')) : 'var(--bg-secondary)') +
                         (isToday ? ';border:2px solid var(--accent)' : '') +
                         (isFuture ? ';opacity:0.3' : '') +
                         ';" title="' + ds + (done ? ' ✓' : '') + '"></div>';
@@ -6280,7 +6280,7 @@
             html += '<button class="trend-btn' + (priorityDistFilter === 'completed' ? ' active' : '') + '" onclick="switchPriorityDistFilter(\'completed\')">已完成</button>';
             html += '</div>';
             html += '<div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:4px;">⬆ 重要程度 <span style="font-size:10px;color:var(--text-muted);">(' + inRange.length + '个)</span></div>';
-            html += barRow(impDist, '#4f6ef7');
+            html += barRow(impDist, cssVar('--accent'));
             html += '<div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin:8px 0 4px;">⚡ 紧急程度</div>';
             html += barRow(urgDist, '#e74c3c');
             container.innerHTML = html;
@@ -6377,7 +6377,7 @@
                 html += '<div class="project-bar-row">' +
                     '<span class="project-bar-name" title="' + p.name + '">' + (p.color ? '<span style="color:' + p.color + ';">●</span> ' : '') + p.name + '</span>' +
                     '<span class="project-bar-count">' + doneCount + '/' + total + '</span>' +
-                    '<div class="project-bar-track"><div class="project-bar-fill" style="transform:scaleX(' + (rate / 100) + ');background:' + (p.color || '#4f6ef7') + ';"></div></div>' +
+                    '<div class="project-bar-track"><div class="project-bar-fill" style="transform:scaleX(' + (rate / 100) + ');background:' + (p.color || cssVar('--accent')) + ';"></div></div>' +
                     '<span class="project-bar-pct">' + rate + '%</span>' +
                     '</div>';
             }
@@ -6389,7 +6389,7 @@
                 html += '<div class="project-bar-row">' +
                     '<span class="project-bar-name">未分类</span>' +
                     '<span class="project-bar-count">' + noProjDone + '/' + noProjTotal + '</span>' +
-                    '<div class="project-bar-track"><div class="project-bar-fill" style="transform:scaleX(' + (rate / 100) + ');background:#95a5a6;"></div></div>' +
+                    '<div class="project-bar-track"><div class="project-bar-fill" style="transform:scaleX(' + (rate / 100) + ');background:' + cssVar('--cat-other-color') + ';"></div></div>' +
                     '<span class="project-bar-pct">' + rate + '%</span>' +
                     '</div>';
             }
