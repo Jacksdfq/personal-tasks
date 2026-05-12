@@ -4365,18 +4365,23 @@
         }
 
         // ===================== CHARTS =====================
+        function cssVar(name) {
+            return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+        }
+
         function initCharts() {
             if (typeof Chart === 'undefined') return;
 
+            var textColor = cssVar('--text-secondary');
             Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-            Chart.defaults.color = '#888';
+            Chart.defaults.color = textColor;
 
             // Trend Chart
             var trendCtx = document.getElementById('trendChart');
             if (trendCtx) {
                 trendChart = new Chart(trendCtx, {
                     type: 'line',
-                    data: { labels: [], datasets: [{ label: '已完成', data: [], borderColor: '#2ecc71', backgroundColor: 'rgba(46,204,113,0.1)', fill: true, tension: 0.4 }] },
+                    data: { labels: [], datasets: [{ label: '已完成', data: [], borderColor: cssVar('--success'), backgroundColor: cssVar('--success') + '1a', fill: true, tension: 0.4 }] },
                     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
                 });
             }
@@ -4388,7 +4393,7 @@
                     type: 'doughnut',
                     data: {
                         labels: ['重要且紧急', '重要不紧急', '不重要不紧急', '不重要但紧急'],
-                        datasets: [{ data: [0, 0, 0, 0], backgroundColor: ['#e74c3c', '#16a085', '#95a5a6', '#f39c12'], borderWidth: 0 }]
+                        datasets: [{ data: [0, 0, 0, 0], backgroundColor: [cssVar('--q1-label-color'), cssVar('--success'), cssVar('--cat-other-color'), cssVar('--warning')], borderWidth: 0 }]
                     },
                     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 12, padding: 10 } } } }
                 });
@@ -4415,8 +4420,8 @@
                     data: {
                         labels: [],
                         datasets: [
-                            { label: '累计完成', data: [], borderColor: '#2ecc71', backgroundColor: 'rgba(46,204,113,0.08)', fill: true, tension: 0.3 },
-                            { label: '累计创建', data: [], borderColor: '#4f6ef7', backgroundColor: 'rgba(79,110,247,0.05)', fill: true, tension: 0.3, borderDash: [5, 5] }
+                            { label: '累计完成', data: [], borderColor: cssVar('--success'), backgroundColor: cssVar('--success') + '14', fill: true, tension: 0.3 },
+                            { label: '累计创建', data: [], borderColor: cssVar('--accent'), backgroundColor: cssVar('--accent') + '0d', fill: true, tension: 0.3, borderDash: [5, 5] }
                         ]
                     },
                     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 8, font: { size: 10 } } } }, scales: { y: { beginAtZero: true } } }
@@ -4532,8 +4537,8 @@
                     weeklyMonthlyChart = new Chart(wmCtx, {
                         type: 'bar',
                         data: { labels: [], datasets: [
-                            { label: '已完成', data: [], backgroundColor: '#2ecc71', borderRadius: 4 },
-                            { label: '已创建', data: [], backgroundColor: '#4f6ef7', borderRadius: 4 }
+                            { label: '已完成', data: [], backgroundColor: cssVar('--success'), borderRadius: 4 },
+                            { label: '已创建', data: [], backgroundColor: cssVar('--accent'), borderRadius: 4 }
                         ]},
                         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 8, font: { size: 10 } } } }, scales: { x: { stacked: false }, y: { beginAtZero: true, stacked: false } } }
                     });
@@ -4544,7 +4549,7 @@
                 if (fCtx) {
                     focusChart = new Chart(fCtx, {
                         type: 'bar',
-                        data: { labels: [], datasets: [{ label: '专注(分钟)', data: [], backgroundColor: '#e74c3c', borderRadius: 4 }] },
+                        data: { labels: [], datasets: [{ label: '专注(分钟)', data: [], backgroundColor: cssVar('--danger'), borderRadius: 4 }] },
                         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, title: { display: true, text: '分钟' } } } }
                     });
                 }
@@ -4862,7 +4867,7 @@
             var name = inp.value.trim();
             if (!name) {
                 inp.focus();
-                inp.style.borderColor = '#ff6b6b';
+                inp.style.borderColor = cssVar('--danger');
                 setTimeout(function() { inp.style.borderColor = ''; }, 1000);
                 return;
             }
@@ -5003,7 +5008,7 @@
             var name = inp.value.trim();
             if (!name) {
                 inp.focus();
-                inp.style.borderColor = '#ff6b6b';
+                inp.style.borderColor = cssVar('--danger');
                 setTimeout(function() { inp.style.borderColor = ''; }, 1000);
                 return;
             }
@@ -6450,7 +6455,7 @@
                     '<span class="rank' + rankClass + '">' + (i + 1) + '</span>' +
                     '<span class="tag-name">' + e.name + '</span>' +
                     '<span class="tag-count">' + e.completed + '/' + e.total + ' 个</span>' +
-                    '<span class="tag-rate" style="color:' + (e.rate >= 70 ? '#27ae60' : e.rate >= 40 ? '#f39c12' : '#e74c3c') + ';">' + e.rate + '%</span>' +
+                    '<span class="tag-rate" style="color:' + (e.rate >= 70 ? cssVar('--success') : e.rate >= 40 ? cssVar('--warning') : cssVar('--danger')) + ';">' + e.rate + '%</span>' +
                     '</div>';
             }
             container.innerHTML = html;
