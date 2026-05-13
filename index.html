@@ -2864,7 +2864,7 @@
             <button class="btn btn-ghost btn-icon" onclick="document.getElementById('importFile').click()" title="导入数据">📥</button>
             <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
             <button class="btn btn-primary" onclick="openModal()">＋ 任务</button>
-            <button class="btn btn-primary" onclick="openTempModal()" style="margin-left:8px;">＋ 临时</button>
+            <button class="btn btn-primary" onclick="openTempModal()" style="margin-left:8px;">💡 灵感</button>
         </div>
     </header>
 
@@ -3061,8 +3061,8 @@
     <div class="modal-overlay" id="tempPanelOverlay" onclick="closeTempPanelOutside(event)">
         <div class="modal" onclick="event.stopPropagation()" style="max-width:600px;max-height:80vh;overflow-y:auto;">
             <h2 style="display:flex;justify-content:space-between;align-items:center;">
-                <span>📋 临时任务栏</span>
-                <button class="btn btn-primary btn-icon-only" onclick="openTempModal()" title="新建临时任务">＋</button>
+                <span>💡 灵感</span>
+                <button class="btn btn-primary btn-icon-only" onclick="openTempModal()" title="新建灵感">💡</button>
             </h2>
             <div id="tempTaskList" class="task-list" style="max-height:none;padding:0;"></div>
         </div>
@@ -3214,7 +3214,7 @@
     <!-- Temp Task Modal -->
     <div class="modal-overlay" id="tempModalOverlay" onclick="closeTempModalOutside(event)">
         <div class="modal" onclick="event.stopPropagation()" style="max-width:400px;">
-            <h2>📋 新建临时任务</h2>
+            <h2>💡 新建灵感</h2>
             <div class="form-group">
                 <label>任务名称</label>
                 <input type="text" id="tempTaskNameInput" placeholder="输入任务名称" maxlength="200">
@@ -3320,6 +3320,7 @@
         var selectedTasks = {};
         var nextId = 1;
         var tempTasks = [];
+        var tempTaskHistory = [];
         var tempNextId = 1;
         var convertingTempId = null;
         var trendChart, quadrantChart, categoryChart;
@@ -3348,6 +3349,7 @@
                     var d = JSON.parse(s);
                     tasks = d.tasks || [];
                     tempTasks = d.tempTasks || [];
+                    tempTaskHistory = d.tempTaskHistory || [];
                     tempNextId = d.tempNextId || 1;
                     deletedTaskIds = d.deletedTaskIds || [];
                     nextId = d.nextId || 1;
@@ -3363,7 +3365,7 @@
                 // Migrate: add updatedAt to items that don't have it (except tasks)
                 var now = new Date().toISOString();
                 var needsSave = false;
-                [projects, habits, templates].forEach(function(arr) {
+                [projects, habits, templates, tempTasks, tempTaskHistory].forEach(function(arr) {
                     for (var i = 0; i < arr.length; i++) {
                         if (!arr[i].updatedAt) { arr[i].updatedAt = arr[i].createdAt || now; needsSave = true; }
                     }
@@ -3406,6 +3408,7 @@
             localStorage.setItem('personal_tasks_v3', JSON.stringify({
                 tasks: tasks,
                 tempTasks: tempTasks,
+                tempTaskHistory: tempTaskHistory,
                 tempNextId: tempNextId,
                 deletedTaskIds: deletedTaskIds,
                 nextId: nextId,
@@ -4355,7 +4358,7 @@
                 '<div class="stat-card overdue"><span class="num">' + overdue + '</span><span class="label">已逾期</span></div>' +
                 '<div class="stat-card efficiency"><span class="num">' + (avgHours < 24 ? avgHours.toFixed(1) + 'h' : (avgHours / 24).toFixed(1) + 'd') + '</span><span class="label">平均完成耗时</span></div>' +
                 '<div class="stat-card new-today"><span class="num">' + todayNew + '</span><span class="label">今日新增</span></div>' +
-                '<div class="stat-card temp-tasks' + (tempCount > 0 ? ' highlight' : '') + '" onclick="openTempPanel()"><span class="num">' + tempCount + '</span><span class="label">临时任务栏</span></div>';
+                '<div class="stat-card temp-tasks' + (tempCount > 0 ? ' highlight' : '') + '" onclick="openTempPanel()"><span class="num">' + tempCount + '</span><span class="label">灵感</span></div>';
         }
 
         function renderCategoryFilter() {
@@ -4937,7 +4940,18 @@
 
             closeModal();
             if (convertingTempId != null) {
-                tempTasks = tempTasks.filter(function(t) { return t.id !== convertingTempId; });
+                var ct = tempTasks.find(function(t) { return t.id === convertingTempId; });
+                if (ct) {
+                    tempTasks = tempTasks.filter(function(t) { return t.id !== convertingTempId; });
+                    tempTaskHistory.push({
+                        id: ct.id,
+                        name: ct.name,
+                        notes: ct.notes,
+                        createdAt: ct.createdAt,
+                        updatedAt: new Date().toISOString(),
+                        status: 'converted'
+                    });
+                }
                 convertingTempId = null;
             }
             saveData();
@@ -5017,24 +5031,34 @@
                 return;
             }
             var notes = document.getElementById('tempTaskNotesInput').value.trim();
+            var now = new Date().toISOString();
             tempTasks.push({
                 id: String(tempNextId++),
                 name: name,
                 notes: notes,
-                createdAt: new Date().toISOString()
+                createdAt: now,
+                updatedAt: now
             });
             closeTempModal();
             saveData();
             renderAll();
             var tpo = document.getElementById('tempPanelOverlay');
             if (tpo && tpo.classList.contains('show')) { renderTempPanel(); }
-            showToast('success', '临时任务已创建');
+            showToast('success', '灵感已记录');
         }
 
         function deleteTempTask(id) {
             var t = tempTasks.find(function(x) { return x.id === id; });
-            if (!t || !confirm('确定要删除该临时任务吗？')) return;
+            if (!t || !confirm('确定要删除该灵感吗？')) return;
             tempTasks = tempTasks.filter(function(x) { return x.id !== id; });
+            tempTaskHistory.push({
+                id: t.id,
+                name: t.name,
+                notes: t.notes,
+                createdAt: t.createdAt,
+                updatedAt: new Date().toISOString(),
+                status: 'deleted'
+            });
             saveData();
             renderAll();
             var tpo = document.getElementById('tempPanelOverlay');
@@ -5065,28 +5089,50 @@
         function renderTempPanel() {
             var container = document.getElementById('tempTaskList');
             if (!container) return;
-            if (tempTasks.length === 0) {
-                container.innerHTML = '<div class="temp-empty">暂无临时任务，点击上方按钮新建</div>';
+            if (tempTasks.length === 0 && tempTaskHistory.length === 0) {
+                container.innerHTML = '<div class="temp-empty">暂无灵感，点击上方按钮新建</div>';
                 return;
             }
-            // Sort by createdAt descending (newest first)
-            var sorted = tempTasks.slice().sort(function(a, b) {
-                return b.createdAt.localeCompare(a.createdAt);
-            });
             var html = '';
-            for (var i = 0; i < sorted.length; i++) {
-                var t = sorted[i];
-                html += '<div class="temp-task-item">' +
-                    '<div class="temp-task-info">' +
-                        '<div class="temp-task-name">' + escTxt(t.name) + '</div>' +
-                        (t.notes ? '<div class="temp-task-notes">' + escTxt(t.notes) + '</div>' : '') +
-                        '<div class="temp-task-time">创建于 ' + formatTime(t.createdAt) + '</div>' +
-                    '</div>' +
-                    '<div class="temp-task-actions">' +
-                        '<button class="btn-convert" onclick="convertTempTask(\'' + t.id + '\')">转入</button>' +
-                        '<button class="btn-delete" onclick="deleteTempTask(\'' + t.id + '\')">删除</button>' +
-                    '</div>' +
-                '</div>';
+            // Active temp tasks
+            if (tempTasks.length > 0) {
+                var sorted = tempTasks.slice().sort(function(a, b) {
+                    return b.createdAt.localeCompare(a.createdAt);
+                });
+                for (var i = 0; i < sorted.length; i++) {
+                    var t = sorted[i];
+                    html += '<div class="temp-task-item">' +
+                        '<div class="temp-task-info">' +
+                            '<div class="temp-task-name">' + escTxt(t.name) + '</div>' +
+                            (t.notes ? '<div class="temp-task-notes">' + escTxt(t.notes) + '</div>' : '') +
+                            '<div class="temp-task-time">创建于 ' + formatTime(t.createdAt) + '</div>' +
+                        '</div>' +
+                        '<div class="temp-task-actions">' +
+                            '<button class="btn-convert" onclick="convertTempTask(\'' + t.id + '\')">转入</button>' +
+                            '<button class="btn-delete" onclick="deleteTempTask(\'' + t.id + '\')">删除</button>' +
+                        '</div>' +
+                    '</div>';
+                }
+            }
+            // History section
+            if (tempTaskHistory.length > 0) {
+                html += '<div style="margin:16px 0 8px;padding-top:12px;border-top:2px solid var(--border);font-size:13px;color:var(--text-secondary);font-weight:600;">📜 历史灵感</div>';
+                html += '<div style="max-height:200px;overflow-y:auto;">';
+                var sortedHistory = tempTaskHistory.slice().sort(function(a, b) {
+                    return b.createdAt.localeCompare(a.createdAt);
+                });
+                for (var j = 0; j < sortedHistory.length; j++) {
+                    var h = sortedHistory[j];
+                    var statusTag = h.status === 'converted' ? '<span style="color:var(--success);font-size:11px;">已转入任务</span>' : '<span style="color:var(--text-secondary);font-size:11px;">已删除</span>';
+                    html += '<div class="temp-task-item" style="opacity:0.7;">' +
+                        '<div class="temp-task-info">' +
+                            '<div class="temp-task-name">' + escTxt(h.name) + '</div>' +
+                            (h.notes ? '<div class="temp-task-notes">' + escTxt(h.notes) + '</div>' : '') +
+                            '<div class="temp-task-time">创建于 ' + formatTime(h.createdAt) + ' · ' + statusTag + '</div>' +
+                        '</div>' +
+                    '</div>';
+                }
+                html += '</div>';
             }
             container.innerHTML = html;
         }
@@ -7149,7 +7195,8 @@
         function pushToLocal(callback) {
             var payload = {
                 tasks: tasks, projects: projects, habits: habits,
-                templates: templates,
+                templates: templates, tempTasks: tempTasks,
+                tempTaskHistory: tempTaskHistory, tempNextId: tempNextId,
                 userSettings: sanitizedSettings(), lastModified: new Date().toISOString()
             };
             fetch(userSettings.syncUrl + '/api/data', {
@@ -7174,7 +7221,8 @@
                     'personal_tasks.json': {
                         content: JSON.stringify({
                             tasks: tasks, projects: projects, habits: habits,
-                            templates: templates,
+                            templates: templates, tempTasks: tempTasks,
+                            tempTaskHistory: tempTaskHistory, tempNextId: tempNextId,
                             userSettings: sanitizedSettings(), lastModified: new Date().toISOString()
                         }, null, 2)
                     }
@@ -7222,11 +7270,17 @@
             var rProjects = remote.projects || [];
             var rHabits = remote.habits || [];
             var rTemplates = remote.templates || [];
+            var rTempTasks = remote.tempTasks || [];
+            var rTempTaskHistory = remote.tempTaskHistory || [];
 
             // Build skip set: don't re-add tasks that were deleted locally
             var skipIds = {};
             for (var d = 0; d < deletedTaskIds.length; d++) {
                 skipIds[deletedTaskIds[d]] = true;
+            }
+            // Also skip temp tasks already in history (deleted/converted locally)
+            for (var h = 0; h < tempTaskHistory.length; h++) {
+                skipIds[tempTaskHistory[h].id] = true;
             }
 
             function mergeArray(localArr, remoteArr, idKey) {
@@ -7261,6 +7315,12 @@
             mergeArray(projects, rProjects, 'id');
             mergeArray(habits, rHabits, 'id');
             mergeArray(templates, rTemplates, 'id');
+            mergeArray(tempTasks, rTempTasks, 'id');
+            mergeArray(tempTaskHistory, rTempTaskHistory, 'id');
+            if (remote.tempNextId && remote.tempNextId > tempNextId) {
+                tempNextId = remote.tempNextId;
+                changed = true;
+            }
 
             // Remove local items that were deleted on the remote side
             // (exists locally but not in remote, and was synced before)
