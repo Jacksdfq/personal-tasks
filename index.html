@@ -3304,7 +3304,8 @@
             lastBackupDate: '',
             lastSyncDate: '',
             lastPullDate: '',
-            lastPushDate: ''
+            lastPushDate: '',
+            lastRemoteModified: ''
         };
         var categories = [
             { id: 'work', name: '工作', color: 'var(--cat-work-color)' },
@@ -6926,6 +6927,7 @@
                 '<div id="syncInfo" style="font-size:11px;color:var(--text-muted);margin-top:6px;line-height:1.6;">' +
                 '<div>🔽 上次拉取：' + (userSettings.lastPullDate ? new Date(userSettings.lastPullDate).toLocaleString() : '从未') + '</div>' +
                 '<div>🔼 上次推送：' + (userSettings.lastPushDate ? new Date(userSettings.lastPushDate).toLocaleString() : '从未') + '</div>' +
+                '<div>☁️ 云端最新数据：' + (userSettings.lastRemoteModified ? new Date(userSettings.lastRemoteModified).toLocaleString() : '未知') + '</div>' +
                 '</div>';
             container.innerHTML = html;
         }
@@ -6995,6 +6997,7 @@
                         showToast('info', '已自动拉取数据');
                     }
                     userSettings.lastPullDate = new Date().toISOString();
+                    if (remote.lastModified) userSettings.lastRemoteModified = remote.lastModified;
                     saveData();
                 }
             });
@@ -7020,7 +7023,7 @@
             var statusEl = document.getElementById('syncStatus');
             if (statusEl) statusEl.innerHTML = '<div class="sync-status info">正在创建云端存储...</div>';
 
-            var initData = { tasks: tasks, projects: projects, habits: habits, templates: templates, userSettings: sanitizedSettings(), lastModified: new Date().toISOString() };
+            var initData = { tasks: tasks, projects: projects, habits: habits, templates: templates, tempTasks: tempTasks, tempTaskHistory: tempTaskHistory, tempNextId: tempNextId, userSettings: sanitizedSettings(), lastModified: new Date().toISOString() };
 
             fetch('https://api.github.com/gists', {
                 method: 'POST',
@@ -7039,6 +7042,7 @@
             }).then(function(gist) {
                 userSettings.syncUrl = gist.id;
                 userSettings.lastSyncDate = new Date().toISOString();
+                userSettings.lastRemoteModified = new Date().toISOString();
                 saveData();
                 renderSyncSettings();
                 if (statusEl) statusEl.innerHTML = '<div class="sync-status success">✅ 云端存储已创建！Gist ID: ' + gist.id + '</div>';
@@ -7084,6 +7088,7 @@
                 saveData();
                 renderAll();
                 userSettings.lastPullDate = new Date().toISOString();
+                if (remote.lastModified) userSettings.lastRemoteModified = remote.lastModified;
                 saveData();
                 renderSyncSettings();
                 var el = document.getElementById('syncStatus');
@@ -7117,6 +7122,7 @@
                     statusEl.innerHTML = '<div class="sync-status error">推送失败：' + pushErr + '</div>';
                 } else {
                     userSettings.lastPushDate = new Date().toISOString();
+                    userSettings.lastRemoteModified = new Date().toISOString();
                     saveData();
                     renderSyncSettings();
                     var el = document.getElementById('syncStatus');
@@ -7258,6 +7264,7 @@
             pushFn(function(err) {
                 if (!err) {
                     userSettings.lastPushDate = new Date().toISOString();
+                    userSettings.lastRemoteModified = new Date().toISOString();
                     saveData();
                 }
             });
