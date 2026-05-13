@@ -3305,7 +3305,9 @@
             lastSyncDate: '',
             lastPullDate: '',
             lastPushDate: '',
-            lastRemoteModified: ''
+            lastRemoteModified: '',
+            deviceName: '',
+            lastDeviceName: ''
         };
         var categories = [
             { id: 'work', name: '工作', color: 'var(--cat-work-color)' },
@@ -6888,6 +6890,8 @@
                     '</div>';
             }
             if (userSettings.syncProvider) {
+                html += '<div class="form-group"><label>本设备名称</label>' +
+                    '<input type="text" id="deviceName" value="' + userSettings.deviceName + '" onchange="userSettings.deviceName=this.value;saveData();" placeholder="电脑 / 手机 / ..." style="width:100%;padding:8px 12px;border:2px solid var(--border);border-radius:10px;background:var(--bg-card);color:var(--text-primary);"></div>';
                 html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;"><div class="form-group"><label>自动拉取</label>' +
                     '<select id="autoPullMin" onchange="onAutoPullChange(this.value)" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);width:100%;">' +
                     '<option value="0"' + (userSettings.autoPullMin === 0 ? ' selected' : '') + '>关闭</option>' +
@@ -6927,7 +6931,7 @@
                 '<div id="syncInfo" style="font-size:11px;color:var(--text-muted);margin-top:6px;line-height:1.6;">' +
                 '<div>🔽 上次拉取：' + (userSettings.lastPullDate ? new Date(userSettings.lastPullDate).toLocaleString() : '从未') + '</div>' +
                 '<div>🔼 上次推送：' + (userSettings.lastPushDate ? new Date(userSettings.lastPushDate).toLocaleString() : '从未') + '</div>' +
-                '<div>☁️ 云端最新数据：' + (userSettings.lastRemoteModified ? new Date(userSettings.lastRemoteModified).toLocaleString() : '未知') + '</div>' +
+                '<div>☁️ 云端最新数据：' + (userSettings.lastRemoteModified ? new Date(userSettings.lastRemoteModified).toLocaleString() : '未知') + (userSettings.lastDeviceName ? '（来自' + userSettings.lastDeviceName + '）' : '') + '</div>' +
                 '</div>';
             container.innerHTML = html;
         }
@@ -6998,6 +7002,7 @@
                     }
                     userSettings.lastPullDate = new Date().toISOString();
                     if (remote.lastModified) userSettings.lastRemoteModified = remote.lastModified;
+                    if (remote.deviceName) userSettings.lastDeviceName = remote.deviceName;
                     saveData();
                 }
             });
@@ -7023,7 +7028,7 @@
             var statusEl = document.getElementById('syncStatus');
             if (statusEl) statusEl.innerHTML = '<div class="sync-status info">正在创建云端存储...</div>';
 
-            var initData = { tasks: tasks, projects: projects, habits: habits, templates: templates, tempTasks: tempTasks, tempTaskHistory: tempTaskHistory, tempNextId: tempNextId, userSettings: sanitizedSettings(), lastModified: new Date().toISOString() };
+            var initData = { tasks: tasks, projects: projects, habits: habits, templates: templates, tempTasks: tempTasks, tempTaskHistory: tempTaskHistory, tempNextId: tempNextId, userSettings: sanitizedSettings(), lastModified: new Date().toISOString(), deviceName: userSettings.deviceName };
 
             fetch('https://api.github.com/gists', {
                 method: 'POST',
@@ -7089,6 +7094,7 @@
                 renderAll();
                 userSettings.lastPullDate = new Date().toISOString();
                 if (remote.lastModified) userSettings.lastRemoteModified = remote.lastModified;
+                if (remote.deviceName) userSettings.lastDeviceName = remote.deviceName;
                 saveData();
                 renderSyncSettings();
                 var el = document.getElementById('syncStatus');
@@ -7203,7 +7209,8 @@
                 tasks: tasks, projects: projects, habits: habits,
                 templates: templates, tempTasks: tempTasks,
                 tempTaskHistory: tempTaskHistory, tempNextId: tempNextId,
-                userSettings: sanitizedSettings(), lastModified: new Date().toISOString()
+                userSettings: sanitizedSettings(), lastModified: new Date().toISOString(),
+                deviceName: userSettings.deviceName
             };
             fetch(userSettings.syncUrl + '/api/data', {
                 method: 'POST',
@@ -7229,7 +7236,8 @@
                             tasks: tasks, projects: projects, habits: habits,
                             templates: templates, tempTasks: tempTasks,
                             tempTaskHistory: tempTaskHistory, tempNextId: tempNextId,
-                            userSettings: sanitizedSettings(), lastModified: new Date().toISOString()
+                            userSettings: sanitizedSettings(), lastModified: new Date().toISOString(),
+                            deviceName: userSettings.deviceName
                         }, null, 2)
                     }
                 }
@@ -7268,6 +7276,49 @@
                     saveData();
                 }
             });
+        }
+
+        // Fetch remote timestamp and device info without merging (lightweight)
+        function fetchRemoteInfo() {
+            if (!userSettings.syncProvider || !userSettings.syncUrl) return;
+            if (userSettings.syncProvider === 'gist' && !userSettings.syncToken) return;
+            if (userSettings.syncProvider === 'local') {
+                var url = userSettings.syncUrl + '/api/data';
+                fetch(url, { method: 'GET', headers: { 'Accept': 'application/json' } })
+                    .then(function(res) { if (!res.ok) return null; return res.json(); })
+                    .then(function(data) {
+                        if (data && data.lastModified) {
+                            userSettings.lastRemoteModified = data.lastModified;
+                            userSettings.lastDeviceName = data.deviceName || '';
+                            saveData();
+                            renderSyncSettings();
+                        }
+                    }).catch(function() {});
+                return;
+            }
+            // Gist: fetch full gist data to read deviceName from content
+            fetch('https://api.github.com/gists/' + userSettings.syncUrl, {
+                headers: {
+                    'Authorization': 'token ' + userSettings.syncToken,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            }).then(function(res) {
+                if (!res.ok) return null;
+                return res.json();
+            }).then(function(gist) {
+                if (!gist || !gist.files || !gist.files['personal_tasks.json']) return;
+                try {
+                    var content = gist.files['personal_tasks.json'].content;
+                    if (!content || content.trim() === '') return;
+                    var data = JSON.parse(content);
+                    if (data.lastModified) {
+                        userSettings.lastRemoteModified = data.lastModified;
+                        userSettings.lastDeviceName = data.deviceName || '';
+                        saveData();
+                        renderSyncSettings();
+                    }
+                } catch(e) {}
+            }).catch(function() {});
         }
 
         // Merge remote data into local. Returns true if any data changed.
@@ -7457,11 +7508,19 @@
 
         // ===================== INIT =====================
         loadData();
+        // Auto-detect device name on first use
+        if (!userSettings.deviceName) {
+            var isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) || window.innerWidth < 768;
+            userSettings.deviceName = isMobile ? '手机' : '电脑';
+            saveData();
+        }
         renderAll();
         renderCategorySelect('other');
         renderBackupBanner();
         initCharts();
         requestNotificationPermission();
+        // Fetch remote timestamp on load
+        fetchRemoteInfo();
         // Check overdue every minute
         setInterval(checkOverdue, 60000);
         // Schedule reminders every hour
