@@ -5036,7 +5036,7 @@
             var notes = document.getElementById('tempTaskNotesInput').value.trim();
             var now = new Date().toISOString();
             tempTasks.push({
-                id: String(tempNextId++),
+                id: Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6),
                 name: name,
                 notes: notes,
                 createdAt: now,
